@@ -41,20 +41,22 @@ Heart 的目标不是让模型「更会回答问题」，而是给它一个**自
 
 ---
 
-## 实现：idea-engine — 三层想法引擎
+## 实现：idea-engine — 三层想法引擎，两个服务
 
 Heart 的参考实现叫 **idea-engine**，像一个人的心智一样工作：**潜意识冒想法 → 判别层过滤 + 蒸馏 → 执行层行动**。
 
+逻辑上分三层，部署上合并为**两个服务**：
+
 ```
-潜意识 (engine.py)          判别层 (discriminator.py)        执行层 (hermes.py)
-扫文件夹→随机思维冒想法      只过滤(SKIP/PASS) + 蒸馏/遗忘     处理 PASS 的想法，行动并把结果落回事实
-   ↓                            ↓                                ↓
-.ideas/*.md (new)          skipped / passed / forgotten        done（结果写回事实文件夹）
+ 潜意识 (engine.py) ──┐
+ 判别层 (discriminator.py) ─┴── mind.py（思维服务，一个进程）──► .ideas/*.md (new → skipped/passed)
+
+ 执行层 (hermes.py) ─────────── hermes.py（执行服务，另一个进程）──► done（结果写回事实文件夹）
 ```
 
-- **潜意识层**：`engine.py`，只负责自由冒出想法（含「欲望」，参考马斯洛需求层次），不评判。它的 `while True` 定时循环就是「心跳」本身。
-- **判别层**：`discriminator.py`，只做过滤——判断每条想法 SKIP 还是 PASS，同时负责蒸馏：老想法逐渐压缩、遗忘（遗忘 = 上下文压缩到 0，不是删除）。
-- **执行层**：`hermes.py`，Hermes agent，处理 PASS 的想法：探索、行动、把结果写回事实文件夹。
+- **潜意识层**（`engine.py`）：只负责自由冒出想法（含「欲望」，参考马斯洛需求层次），不评判。它的 `while True` 定时循环就是「心跳」本身。
+- **判别层**（`discriminator.py`）：只做过滤——判断每条想法 SKIP 还是 PASS，同时负责蒸馏：老想法逐渐压缩、遗忘（遗忘 = 上下文压缩到 0，不是删除）。
+- **执行层**（`hermes.py`）：Hermes agent，处理 PASS 的想法：探索、行动、把结果写回事实文件夹。
 
 ---
 
@@ -77,24 +79,22 @@ export HEART_API_KEY="***"
 
 > ⚠️ 切勿把真实 `api_key` / `base_url` 提交进 git。环境变量优先于 `config.yaml`。
 
-### 运行
-
-三个进程各自常驻（也可只跑其中一两个）：
+### 运行（两个服务）
 
 ```bash
-python3 engine.py        /path/to/folder            # 潜意识
-python3 discriminator.py /path/to/folder            # 判别层
-python3 hermes.py        /path/to/folder            # 执行层
+python3 mind.py    /path/to/folder            # 思维服务：潜意识冒想法 + 判别 + 蒸馏
+python3 hermes.py  /path/to/folder            # 执行服务：处理 PASS 的想法
 
 # 调试：--once 只跑一轮；--idea "..." 直接喂一条；--verbose 看细节
-python3 discriminator.py /path/to/folder --idea "想要一个一起吃饭的人"
-python3 hermes.py        /path/to/folder --idea "把'我喜欢下雨天'记进一个心情文件"
+python3 mind.py    /path/to/folder --once
+python3 hermes.py  /path/to/folder --idea "把'我喜欢下雨天'记进一个心情文件"
 
 # 后台常驻
-nohup python3 engine.py        /path/to/folder > /tmp/engine.log 2>&1 &
-nohup python3 discriminator.py /path/to/folder > /tmp/disc.log   2>&1 &
-nohup python3 hermes.py        /path/to/folder > /tmp/hermes.log 2>&1 &
+nohup python3 mind.py    /path/to/folder > /tmp/mind.log   2>&1 &
+nohup python3 hermes.py  /path/to/folder > /tmp/hermes.log 2>&1 &
 ```
+
+> `engine.py` / `discriminator.py` 仍可单独运行（调试用）；`mind.py` 是合并后的推荐入口。
 
 ### 人设（AGENTS.md）
 
@@ -134,7 +134,7 @@ verdict: SKIP: 只是想想，不需要行动
 
 | 键 | 含义 |
 |----|------|
-| interval | 潜意识 tick 间隔（秒） |
+| interval | 思维服务 tick 间隔（秒） |
 | methods | 思维方式列表（含「欲望」） |
 | fact_weight / idea_weight | 事实/想法的触发权重 |
 | recency_half_life | 新旧衰减半衰期（秒） |
@@ -156,6 +156,7 @@ verdict: SKIP: 只是想想，不需要行动
 
 - [x] 三层引擎原型（潜意识 / 判别 / 执行）
 - [x] 密钥与环境变量注入（HEART_BASE_URL / HEART_API_KEY）
+- [x] 双服务部署（mind 思维服务 + hermes 执行服务）
 - [ ] 主动行动触发器（proactive-action triggers）
 - [ ] 长期目标与记忆脉搏（long-term goal & memory pulse）
 - [ ] 可插拔的动机 / 情感模块（pluggable motivation & affect modules）

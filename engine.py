@@ -298,7 +298,10 @@ def dedup(candidates: list, existing: list, min_ratio: float = 0.6) -> list:
 
 
 def generate(prompt: str, cfg: dict):
-    url = cfg.get("base_url", "").rstrip("/") + "/chat/completions"
+    base = (cfg.get("base_url") or "").strip()
+    if not base:
+        return "", "未配置 base_url：请设置环境变量 HEART_BASE_URL（或 config.yaml 的 base_url）", -1
+    url = base.rstrip("/") + "/chat/completions"
     payload = {
         "model": cfg.get("model", ""),
         "messages": [{"role": "user", "content": prompt}],
