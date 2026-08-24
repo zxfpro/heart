@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>未来火锅基金 · 忍一下，就是一顿火锅</title>
+<style>
+  :root{
+    --bg:#1a120c; --bg2:#241710; --card:#34201a; --card2:#432a20;
+    --ink:#fbe7d2; --soft:#c9a890; --muted:#8a6a58;
+    --brand:#e8623c; --brand2:#f0a83a; --gold:#f5c451; --ok:#6ac77a; --no:#d2503f;
+    --line:#5a3628; --yolk:#f5c542; --shell:#f3e6cf;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(130% 70% at 50% -10%,#3a1d14 0%,#24130d 55%,#150d09 100%);
+    color:var(--ink); min-height:100dvh; max-width:480px; margin:0 auto;
+    padding:0 0 110px; line-height:1.55;
+  }
+  header{
+    position:sticky; top:0; z-index:10;
+    background:linear-gradient(180deg,rgba(36,19,13,.97),rgba(36,19,13,.85));
+    backdrop-filter:blur(8px); padding:14px 16px 12px; border-bottom:1px solid var(--line);
+  }
+  header .row{display:flex; align-items:center; justify-content:space-between; gap:10px}
+  header h1{font-size:18px; margin:0; font-weight:800; letter-spacing:.5px}
+  header h1 .em{color:var(--brand2)}
+  header .sub{font-size:11.5px; color:var(--soft); margin-top:3px}
+  .fund-pill{
+    font-size:11px; font-weight:800; color:#1a120c; background:linear-gradient(90deg,var(--yolk),var(--brand2));
+    padding:7px 12px; border-radius:20px; white-space:nowrap;
+  }
+  .fund-pill small{font-weight:500; opacity:.7}
+  .tabs{display:flex; gap:6px; margin-top:12px}
+  .tab{
+    flex:1; padding:9px 0; text-align:center; font-size:13px; font-weight:600;
+    border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--soft); cursor:pointer;
+  }
+  .tab.active{background:var(--ink); color:#24130d; border-color:var(--ink)}
+  main{padding:16px}
+  h2{font-size:14px; margin:18px 0 10px; color:var(--ink)}
+  .hint{font-size:12px; color:var(--soft); margin:-4px 0 12px}
+
+  /* 换算 */
+  .input-wrap{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:16px; text-align:center;
+  }
+  .input-wrap .lab{font-size:12px; color:var(--soft); margin-bottom:8px}
+  .amt-row{display:flex; align-items:baseline; justify-content:center; gap:4px}
+  .amt-row .cur{font-size:20px; color:var(--brand2); font-weight:700}
+  #amt{
+    width:62%; background:transparent; border:none; outline:none;
+    font-size:40px; font-weight:800; color:var(--ink); text-align:center;
+    font-variant-numeric:tabular-nums;
+  }
+  #amt::placeholder{color:var(--muted); font-weight:600; font-size:30px}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px}
+  .chip{
+    font-size:12px; font-weight:600; color:var(--ink); background:var(--card2);
+    border:1px solid var(--line); padding:7px 13px; border-radius:20px; cursor:pointer;
+  }
+  .chip:active{transform:scale(.95)}
+  .convert-out{
+    margin-top:16px; background:var(--bg2); border:1px solid var(--line);
+    border-radius:16px; padding:16px 16px 14px;
+  }
+  .egg-stack{display:flex; flex-wrap:wrap; gap:3px; justify-content:center; margin:6px 0 10px; min-height:30px}
+  .egg{
+    width:18px; height:22px; border-radius:50% 50% 48% 48%/60% 60% 40% 40%;
+    background:radial-gradient(60% 60% at 35% 30%,#fff6d6,#f5c542 70%,#d9a322);
+    display:inline-block;
+  }
+  .conv-line{font-size:13px; color:var(--soft); text-align:center}
+  .conv-line b{color:var(--yolk); font-size:17px; font-weight:800}
+  .verdict{
+    margin-top:10px; text-align:center; font-size:13px; font-weight:700;
+    padding:8px 10px; border-radius:10px; background:rgba(245,196,81,.08);
+    color:var(--yolk);
+  }
+  .verdict.no{color:var(--no); background:rgba(210,80,63,.1)}
+  .btn-row{display:flex; gap:10px; margin-top:14px}
+  .btn{
+    flex:1; padding:13px 0; border:none; border-radius:12px; font-size:14px; font-weight:700;
+    cursor:pointer; transition:transform .08s, opacity .15s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:linear-gradient(90deg,var(--brand),var(--brand2)); color:#1a120c}
+  .btn.ghost{background:var(--card2); color:var(--soft); border:1px solid var(--line)}
+
+  /* 基金 */
+  .fund-card{
+    background:linear-gradient(160deg,var(--card),var(--card2));
+    border:1px solid var(--line); border-radius:18px; padding:18px 18px 16px;
+    text-align:center; position:relative; overflow:hidden;
+  }
+  .fund-card::before{
+    content:""; position:absolute; inset:0;
+    background:radial-gradient(60% 50% at 50% 0%,rgba(245,196,81,.12),transparent 70%);
+    pointer-events:none;
+  }
+  .fund-lab{font-size:12px; color:var(--soft)}
+  .fund-amt{font-size:42px; font-weight:800; color:var(--yolk); margin:4px 0 2px; font-variant-numeric:tabular-nums}
+  .fund-amt .y{font-size:22px; color:var(--brand2); margin-right:2px}
+  .fund-eggs{font-size:12.5px; color:var(--soft)}
+  .fund-eggs b{color:var(--ink)}
+  .goal-bar{
+    height:12px; border-radius:12px; background:#2a1812; margin:14px 4px 6px;
+    overflow:hidden; position:relative;
+  }
+  .goal-bar i{display:block; height:100%; border-radius:12px; background:linear-gradient(90deg,var(--brand),var(--brand2),var(--gold)); transition:width .4s ease}
+  .goal-meta{display:flex; justify-content:space-between; font-size:11.5px; color:var(--soft); padding:0 4px}
+  .goal-meta b{color:var(--ink)}
+  .to-go{margin-top:14px; font-size:13px; color:var(--ink); font-weight:600}
+  .to-go .hl{color:var(--yolk)}
+  .ready{
+    margin-top:16px; padding:14px; border-radius:14px;
+    background:linear-gradient(135deg,rgba(106,199,122,.16),rgba(240,168,58,.14));
+    border:1px solid rgba(106,199,122,.4);
+  }
+  .ready .big{font-size:22px; font-weight:800; color:var(--ok)}
+  .ready .d{font-size:12px; color:var(--soft); margin-top:3px}
+  .eat-btn{
+    margin-top:12px; width:100%; padding:14px; border:none; border-radius:13px;
+    background:linear-gradient(90deg,var(--brand),var(--brand2)); color:#1a120c;
+    font-size:15px; font-weight:800; cursor:pointer;
+  }
+  .eat-btn:active{transform:scale(.98)}
+  .ledger{margin-top:18px}
+  .ledger .li{
+    display:flex; align-items:center; gap:10px; padding:11px 13px;
+    background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:8px;
+  }
+  .li .ic{font-size:18px; width:26px; text-align:center}
+  .li .body{flex:1; min-width:0}
+  .li .body .t{font-size:13px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .li .body .s{font-size:11px; color:var(--muted); margin-top:1px}
+  .li .amt{font-size:14px; font-weight:800; color:var(--yolk); white-space:nowrap}
+  .li.hot .amt{color:var(--brand)}
+  .empty{padding:24px 0; text-align:center; color:var(--muted); font-size:13px}
+  .stat-row{display:flex; gap:8px; margin-top:6px}
+  .stat{flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:9px 10px; text-align:center}
+  .stat .v{font-size:16px; font-weight:800; color:var(--ink)}
+  .stat .l{font-size:10.5px; color:var(--soft); margin-top:1px}
+
+  /* 规矩 */
+  .creed{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 14px; margin-bottom:10px}
+  .creed .hd{display:flex; align-items:center; gap:8px}
+  .creed .n{
+    width:24px; height:24px; border-radius:50%; background:var(--brand); color:#1a120c;
+    font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .creed .t{font-size:14px; font-weight:700; color:var(--ink)}
+  .creed .d{font-size:12.5px; color:var(--soft); margin-top:6px; line-height:1.6}
+  .motto{
+    margin-top:8px; padding:16px; border-radius:14px; text-align:center;
+    background:linear-gradient(135deg,rgba(232,98,60,.12),rgba(245,196,81,.1));
+    border:1px dashed var(--line);
+  }
+  .motto .q{font-size:14px; font-weight:700; color:var(--yolk); line-height:1.7}
+  .motto .s{font-size:11.5px; color:var(--soft); margin-top:6px}
+  .set{margin-top:14px}
+  .set .row{display:flex; align-items:center; justify-content:space-between; padding:12px 13px; background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:8px}
+  .set .row .l{font-size:13px; color:var(--ink)}
+  .set .row .l small{display:block; font-size:11px; color:var(--muted); margin-top:1px}
+  .set input{
+    width:96px; background:var(--bg2); border:1px solid var(--line); border-radius:8px;
+    color:var(--yolk); font-size:15px; font-weight:700; text-align:right; padding:7px 10px; outline:none;
+    font-variant-numeric:tabular-nums;
+  }
+  .set .cur{font-size:13px; color:var(--soft); margin-left:-6px; margin-right:4px}
+
+  /* footer / toast */
+  footer{
+    position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto;
+    background:linear-gradient(180deg,transparent,rgba(20,13,9,.96) 40%);
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+    display:flex; gap:10px;
+  }
+  footer .f-amt{font-size:12px; color:var(--soft); padding:0 4px; align-self:center; flex:1; min-width:0}
+  footer .f-amt b{color:var(--yolk)}
+  #toast{
+    position:fixed; left:50%; bottom:96px; transform:translateX(-50%) translateY(20px);
+    background:rgba(20,13,9,.96); border:1px solid var(--line); color:var(--ink);
+    padding:12px 18px; border-radius:14px; font-size:13px; opacity:0; pointer-events:none;
+    transition:opacity .25s, transform .25s; z-index:50; text-align:center; max-width:88%;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  #toast .big{font-size:26px; font-weight:800; color:var(--yolk); margin-bottom:2px}
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <div>
+      <h1>未来<span class="em">火锅</span>基金</h1>
+      <div class="sub">忍一下，就是一顿火锅</div>
+    </div>
+    <div class="fund-pill" id="hpill"><small>基金</small> ¥0</div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-v="conv">换算</div>
+    <div class="tab" data-v="fund">基金</div>
+    <div class="tab" data-v="creed">规矩</div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<footer>
+  <div class="f-amt" id="foot">基金 <b>¥0</b> · 还差 <b>¥0</b> 开锅</div>
+</footer>
+<div id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e;};
+const KEY="hotpotFund.v1";
+const def={ balance:0, goal:200, eggPrice:1.2, eaten:0, ledger:[] };
+let state=load();
+
+function load(){
+  try{ const s=JSON.parse(localStorage.getItem(KEY)); if(s&&typeof s.balance==="number") return Object.assign({},def,s); }catch(e){}
+  return JSON.parse(JSON.stringify(def));
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+function fmt(n){ return "¥"+(Math.round(n*100)/100).toLocaleString("zh-CN",{minimumFractionDigits:0,maximumFractionDigits:2}); }
+function eggsOf(yuan){ return Math.floor(yuan/Math.max(0.01,state.eggPrice)); }
+function pad(n){ return n<10?"0"+n:n; }
+function when(ts){
+  const d=new Date(ts), now=new Date();
+  const sameDay=d.toDateString()===now.toDateString();
+  const t=pad(d.getHours())+":"+pad(d.getMinutes());
+  if(sameDay) return "今天 "+t;
+  return (d.getMonth()+1)+"月"+d.getDate()+"日 "+t;
+}
+
+/* ---- 换算 ---- */
+function renderConv(app){
+  app.appendChild(el("div","hint","想乱花钱时，先换算成鸡蛋——过得了蛋这一关，再花。"));
+  const wrap=el("div","input-wrap");
+  wrap.appendChild(el("div","lab","这次想花多少钱？"));
+  const row=el("div","amt-row");
+  row.appendChild(el("span","cur","¥"));
+  const inp=el("input"); inp.id="amt"; inp.type="number"; inp.inputMode="decimal"; inp.placeholder="0";
+  inp.step="0.01"; inp.min="0";
+  row.appendChild(inp);
+  wrap.appendChild(row);
+  const chips=el("div","chips");
+  [["¥9.9","9.9"],["¥29","29"],["¥39","39"],["¥99","99"]].forEach(([l,v])=>{
+    const c=el("div","chip",l);
+    c.onclick=()=>{ inp.value=v; renderConvOut(); };
+    chips.appendChild(c);
+  });
+  wrap.appendChild(chips);
+  app.appendChild(wrap);
+
+  const out=el("div","convert-out"); out.id="convOut";
+  out.appendChild(el("div","conv-line","输入金额看看值几个蛋 🥚"));
+  app.appendChild(out);
+
+  const br=el("div","btn-row");
+  const b1=el("button","btn ghost","没忍住，花了 💸");
+  b1.onclick=()=>{ showToast("花了就花了，下一笔忍回来就好"); inp.value=""; renderConvOut(); };
+  const b2=el("button","btn primary","忍住了，存进基金 🐣");
+  b2.onclick=()=>deposit(inp);
+  br.appendChild(b1); br.appendChild(b2);
+  app.appendChild(br);
+
+  inp.oninput=renderConvOut;
+  inp.focus();
+  renderConvOut();
+
+  function renderConvOut(){
+    const v=parseFloat(inp.value);
+    const box=$("#convOut"); box.innerHTML="";
+    if(!v||v<=0){
+      box.appendChild(el("div","conv-line","输入金额看看值几个蛋 🥚"));
+      return;
+    }
+    const eggs=eggsOf(v);
+    const stack=el("div","egg-stack");
+    const shown=Math.min(eggs,40);
+    for(let i=0;i<shown;i++) stack.appendChild(el("i","egg"));
+    if(eggs>40) stack.appendChild(el("span","conv-line",`…还有 ${eggs-40} 个`));
+    box.appendChild(stack);
+    box.appendChild(el("div","conv-line",`这笔 = <b>${eggs.toLocaleString()}</b> 个鸡蛋`));
+    const towardGoal=state.goal>0?Math.round(v/state.goal*100):0;
+    const vd=el("div","verdict");
+    if(v>=state.goal){
+      vd.classList.add("no");
+      vd.textContent=`这么多蛋！一顿火锅的钱，忍下来直接开锅。`;
+    } else if(towardGoal>=10){
+      vd.textContent=`忍下来 = 火锅基金进 ${towardGoal}%，离开锅又近一步。`;
+    } else {
+      vd.textContent=`就 ${eggs} 个蛋，值不值，自己掂量。`;
+    }
+    box.appendChild(vd);
+  }
+}
+
+function deposit(inp){
+  const v=parseFloat(inp.value);
+  if(!v||v<=0){ showToast("先输入想花的金额"); return; }
+  const eggs=eggsOf(v);
+  state.balance+=v;
+  const e={kind:"deposit", amt:v, eggs:eggs, ts:Date.now()};
+  state.ledger.unshift(e);
+  if(state.ledger.length>200) state.ledger.length=200;
+  save();
+  const justHit=state.balance>=state.goal && (state.balance-v)<state.goal;
+  if(justHit){
+    showToast(`<b>存进基金 ${fmt(v)}</b><br><span style="color:var(--ok)">基金满了，火锅自由达成 🍲 可以出发了！</span>","🎉");
+  } else if(state.balance>=state.goal){
+    showToast(`<b>存进基金 ${fmt(v)}</b><br><span style="color:var(--ok)">基金已满，随时可以开锅 🍲</span>`);
+  } else {
+    showToast(`<b>存进基金 ${fmt(v)}</b><br><span style="opacity:.85">=${eggs} 个蛋 · 离火锅还差 ${fmt(Math.max(0,state.goal-state.balance))}</span>`);
+  }
+  inp.value=""; renderConvOut(); syncChrome();
+}
+
+/* ---- 基金 ---- */
+function renderFund(app){
+  const card=el("div","fund-card");
+  card.appendChild(el("div","fund-lab","未来火锅基金余额"));
+  const amt=el("div","fund-amt",`<span class="y">¥</span>${Math.floor(state.balance).toLocaleString("zh-CN")}<small style="font-size:20px;color:var(--brand2)"></small>`);
+  card.appendChild(amt);
+  card.appendChild(el("div","fund-eggs",`≈ <b>${eggsOf(state.balance).toLocaleString()}</b> 个鸡蛋 · 目标 <b>${fmt(state.goal)}</b>`));
+  const bar=el("div","goal-bar"); const i=el("i");
+  const pct=Math.min(100, state.balance/Math.max(1,state.goal)*100);
+  i.style.width=pct+"%"; bar.appendChild(i); card.appendChild(bar);
+  const meta=el("div","goal-meta");
+  meta.appendChild(el("span",`已存 <b>${fmt(state.balance)}</b>`));
+  meta.appendChild(el("span",`目标 <b>${fmt(state.goal)}</b>`));
+  card.appendChild(meta);
+
+  if(state.balance>=state.goal){
+    const ready=el("div","ready");
+    ready.appendChild(el("div","big","火锅自由达成 🍲"));
+    ready.appendChild(el("div","d",`攒了 ${fmt(state.balance)}，够开锅了。说走就走，别让钱在账上凉着。`));
+    const eat=el("button","eat-btn","真的去吃了，开锅！");
+    eat.onclick=()=>eatHotpot();
+    ready.appendChild(eat);
+    card.appendChild(ready);
+  } else {
+    card.appendChild(el("div","to-go",`还差 <span class="hl">${fmt(state.goal-state.balance)}</span> · 再忍几笔就开锅`));
+  }
+  app.appendChild(card);
+
+  const sr=el("div","stat-row");
+  const allDep=state.ledger.filter(x=>x.kind==="deposit");
+  const sumDep=allDep.reduce((a,b)=>a+b.amt,0);
+  const cntDep=allDep.length;
+  const eaten=state.ledger.filter(x=>x.kind==="hotpot").length;
+  sr.appendChild(statCell(cntDep.toLocaleString(),"忍住次数"));
+  sr.appendChild(statCell(fmt(sumDep),"累计存入"));
+  sr.appendChild(statCell(String(eaten),"已开锅顿数"));
+  app.appendChild(sr);
+
+  app.appendChild(el("h2","","存取记录"));
+  if(state.ledger.length===0){
+    app.appendChild(el("div","empty","还没忍过一笔——下次想乱花钱，回来换算一下"));
+  } else {
+    const list=el("div","ledger");
+    state.ledger.slice(0,40).forEach(x=>{
+      const li=el("div","li"+(x.kind==="hotpot"?" hot":""));
+      li.appendChild(el("span","ic", x.kind==="hotpot"?"🍲":"🐣"));
+      const body=el("div","body");
+      body.appendChild(el("div","t", x.kind==="hotpot"?`开锅吃火锅 · ${x.eggs}个蛋的份`:`忍住没花 · ${x.eggs} 个蛋`));
+      body.appendChild(el("div","s", when(x.ts)));
+      li.appendChild(body);
+      li.appendChild(el("span","amt", x.kind==="hotpot"?`-${fmt(x.amt)}`:`+${fmt(x.amt)}`));
+      list.appendChild(li);
+    });
+    app.appendChild(list);
+  }
+}
+function statCell(v,l){ const s=el("div","stat"); s.appendChild(el("div","v",v)); s.appendChild(el("div","l",l)); return s; }
+
+function eatHotpot(){
+  if(state.balance<state.goal){ showToast("基金还没攒够"); return; }
+  const e={kind:"hotpot", amt:state.balance, eggs:eggsOf(state.balance), ts:Date.now()};
+  state.eaten++;
+  state.ledger.unshift(e);
+  if(state.ledger.length>200) state.ledger.length=200;
+  state.balance=0;
+  save();
+  showToast(`<b>开锅啦，火锅自由 🍲</b><br><span style="opacity:.9">吃一顿说走就走的火锅，然后回来继续攒下一顿。</span>`);
+  render(); syncChrome();
+}
+
+/* ---- 规矩 ---- */
+function renderCreed(app){
+  app.appendChild(el("div","hint","三条规矩，一条心法。"));
+  const creed=[
+    {n:1,t:"花钱前先换算成鸡蛋",d:"一切欲望，先过鸡蛋这一关。一笔钱等于几个蛋，比等于几张红钞票更扎眼——蛋是看得见、数得着的。"},
+    {n:2,t:"忍住不花，立刻存进基金",d:"钱没花出去，就当场搬进火锅账户。别让它变成别的花销溜走——基金只认「忍住的那一下」。"},
+    {n:3,t:"攒够了就真的去吃",d:"基金满了，不许再攒、不许挪用——说走就走，真去吃火锅。攒钱不是为了数字，是为了那顿能兑现的快乐。"}
+  ];
+  creed.forEach(c=>{
+    const x=el("div","creed");
+    x.appendChild(el("div","hd",`<span class="n">${c.n}</span><span class="t">${c.t}</span>`));
+    x.appendChild(el("div","d",c.d));
+    app.appendChild(x);
+  });
+  const motto=el("div","motto");
+  motto.appendChild(el("div","q","存钱不是为了数字，<br>是为了那顿说走就走的火锅。"));
+  motto.appendChild(el("div","s","—— 把每一笔忍住的欲望，换成锅里翻滚的汤"));
+  app.appendChild(motto);
+
+  const set=el("div","set");
+  set.appendChild(setRow("鸡蛋单价","eggPrice","一个鸡蛋多少钱，决定换算尺度","¥"));
+  set.appendChild(setRow("火锅目标","goal","攒够多少就开锅去吃火锅","¥"));
+  app.appendChild(set);
+
+  const reset=el("button","btn ghost","清空基金重来");
+  reset.style.width="100%"; reset.style.marginTop="12px";
+  reset.onclick=()=>{
+    if(confirm("清空基金和记录？已开锅的顿数也会归零。")){
+      state=JSON.parse(JSON.stringify(def)); save(); render(); syncChrome();
+      showToast("已清空，从下一笔忍住开始");
+    }
+  };
+  app.appendChild(reset);
+}
+function setRow(label,key,desc,cur){
+  const r=el("div","row");
+  r.appendChild(el("div","l",`${label}<small>${desc}</small>`));
+  const w=el("div"); w.style.display="flex"; w.style.alignItems="center";
+  w.appendChild(el("span","cur",cur));
+  const inp=el("input"); inp.type="number"; inp.step="0.5"; inp.min="0"; inp.value=state[key];
+  inp.oninput=()=>{ const v=parseFloat(inp.value); if(!isNaN(v)&&v>=0){ state[key]=v; save(); syncChrome(); } };
+  w.appendChild(inp);
+  r.appendChild(w);
+  return r;
+}
+
+/* ---- chrome ---- */
+function syncChrome(){
+  $("#hpill").innerHTML=`<small>基金</small> ${fmt(state.balance)}`;
+  const left=Math.max(0,state.goal-state.balance);
+  $("#foot").innerHTML=`基金 <b>${fmt(state.balance)}</b> · 还差 <b>${fmt(left)}</b> 开锅`;
+}
+function render(){
+  const app=$("#app"); app.innerHTML="";
+  const v=state.view||"conv";
+  if(v==="conv") renderConv(app);
+  else if(v==="fund") renderFund(app);
+  else renderCreed(app);
+}
+function go(v){ state.view=v; document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.v===v)); render(); }
+document.querySelectorAll(".tab").forEach(t=>{ t.onclick=()=>go(t.dataset.v); });
+
+function showToast(html,big){
+  const t=$("#toast"); t.innerHTML=(big?`<div class="big">${big}</div>`:"")+html;
+  t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),3200);
+}
+
+state.view=state.view||"conv";
+syncChrome(); render();
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# idea-engine 配置
+interval: 20          # 潜意识 tick 间隔（秒）
+limit: 1              # 每轮生成条数（默认 1 条）
+recent: 20            # 生成时回看最近 N 条已有想法
+max_chars: 20000      # 喂给模型的原料字符上限
+methods: 联想,类比,比喻,反转,嫁接,跨界组合,逆向,极端化,欲望   # 每轮随机选一种
+
+# 触发权重（概率触发，非确定）
+fact_weight: 3.0        # 事实的触发权重（高于想法）
+idea_weight: 1.0        # 想法的触发权重
+recency_half_life: 86400.0   # 新旧衰减半衰期（秒），越小越偏爱新文件
+
+# 蒸馏 / 遗忘（判别层）
+distill_age: 3600       # 想法多久后开始蒸馏（秒）
+distill_max: 3          # 蒸馏到第几轮后遗忘（压缩到 0）
+
+# LLM 接口（OpenAI 兼容）—— 潜意识 & 判别层用
+# 敏感信息勿提交 git！优先用环境变量 HEART_BASE_URL / HEART_API_KEY 注入。
+# 下方空值仅作占位，真实值请用环境变量或本地未跟踪的配置填入。
+base_url: ""
+api_key: ""
+model: deepseek-v4-flash
+temperature: 0.8

@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>火锅购物车 · 逛一圈，吃饱饱</title>
+<style>
+  :root{
+    --bg:#1c1410; --bg2:#2a1a14; --card:#3a221a; --card2:#4a2a1e;
+    --ink:#fbe9d6; --soft:#c9a890; --muted:#8a6a58;
+    --brand:#e8623c; --brand2:#f0a83a; --gold:#f5c451; --ok:#6ac77a; --no:#d2503f;
+    --line:#5a3628; --steam:rgba(255,235,210,.18);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(120% 80% at 50% -10%,#3a1e16 0%,#241410 55%,#160d0a 100%);
+    color:var(--ink); min-height:100dvh; max-width:480px; margin:0 auto;
+    padding:0 0 120px; line-height:1.5;
+  }
+  header{
+    position:sticky; top:0; z-index:10;
+    background:linear-gradient(180deg,rgba(36,20,16,.96),rgba(36,20,16,.86));
+    backdrop-filter:blur(8px); padding:14px 16px 12px; border-bottom:1px solid var(--line);
+  }
+  header .row{display:flex; align-items:center; justify-content:space-between; gap:10px}
+  header h1{font-size:18px; margin:0; font-weight:800; letter-spacing:.5px}
+  header h1 .em{color:var(--brand2)}
+  header .sub{font-size:11.5px; color:var(--soft); margin-top:3px}
+  .meters{display:flex; gap:8px; margin-top:12px}
+  .meter{flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:8px 10px}
+  .meter .lbl{font-size:10.5px; color:var(--soft); display:flex; justify-content:space-between}
+  .meter .lbl b{color:var(--gold); font-weight:700}
+  .bar{height:6px; border-radius:6px; background:#321912; margin-top:6px; overflow:hidden}
+  .bar i{display:block; height:100%; border-radius:6px; transition:width .35s ease}
+  .bar.full i{background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .bar.love i{background:linear-gradient(90deg,#d2503f,#f0a83a)}
+  .bar.lap i{background:linear-gradient(90deg,#7a5cb0,#f5c451)}
+  main{padding:14px 16px}
+
+  /* 一圈地图 */
+  .lap{
+    position:relative; height:118px; border:1px dashed var(--line);
+    border-radius:16px; background:linear-gradient(180deg,#2a1710,#1f110c);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .lap .track{
+    width:86%; height:62px; border:2px solid var(--line); border-radius:40px;
+    position:relative; display:flex; align-items:center; justify-content:space-between;
+    padding:0 18px;
+  }
+  .lap .stop{
+    width:22px; height:22px; border-radius:50%; background:var(--card);
+    border:1px solid var(--line); font-size:11px; color:var(--soft);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .lap .stop.done{background:var(--ok); color:#0f1a10; border-color:var(--ok)}
+  .lap .stop.now{background:var(--brand); color:#fff; border-color:var(--brand);
+    box-shadow:0 0 0 4px rgba(232,98,60,.22); transform:scale(1.12)}
+  .lap .cart{
+    position:absolute; top:50%; left:0; font-size:22px; transform:translate(-50%,-50%);
+    transition:left .5s cubic-bezier(.34,1.2,.64,1);
+  }
+  .lap .badge{
+    position:absolute; top:8px; right:12px; font-size:10.5px; color:var(--soft);
+    background:var(--card); border:1px solid var(--line); padding:3px 8px; border-radius:20px;
+  }
+  .lap .badge b{color:var(--gold)}
+  .lap .hint-lap{
+    position:absolute; bottom:8px; left:0; right:0; text-align:center;
+    font-size:11px; color:var(--muted);
+  }
+
+  /* 货架配菜区 */
+  h2{font-size:14px; margin:18px 0 10px; display:flex; align-items:center; gap:8px}
+  h2 .aisle{font-size:11px; color:var(--soft); font-weight:600;
+    background:var(--card); border:1px solid var(--line); padding:2px 8px; border-radius:20px}
+  .shelf{display:grid; grid-template-columns:repeat(4,1fr); gap:9px}
+  .food{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:11px 4px 8px; text-align:center; cursor:pointer; position:relative;
+    transition:transform .08s; user-select:none;
+  }
+  .food:active{transform:scale(.94)}
+  .food .em{font-size:26px; line-height:1}
+  .food .nm{font-size:11px; margin-top:5px; color:var(--ink)}
+  .food .sec{font-size:9.5px; color:var(--muted); margin-top:1px}
+  .food.cooking{border-color:var(--brand2); background:#3a2113}
+  .food.cooking::after{
+    content:"涮中"; position:absolute; top:-7px; left:50%; transform:translateX(-50%);
+    font-size:9px; background:var(--brand2); color:#1a0e08; font-weight:700;
+    padding:1px 6px; border-radius:10px;
+  }
+
+  /* 锅 + 碗 */
+  .station{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;
+  }
+  .pot, .bowl{
+    background:linear-gradient(180deg,#3a2116,#261410); border:1px solid var(--line);
+    border-radius:18px; padding:12px; position:relative; overflow:hidden;
+  }
+  .pot .role, .bowl .role{
+    font-size:10.5px; font-weight:700; color:var(--brand2);
+    display:inline-flex; align-items:center; gap:5px;
+    background:rgba(240,168,58,.12); padding:3px 8px; border-radius:20px;
+  }
+  .bowl .role{color:#7a9cdf; background:rgba(122,156,223,.12)}
+  .pot .role .who{color:var(--soft)}
+  .pot .ring{
+    position:relative; width:108px; height:108px; margin:8px auto 4px;
+  }
+  .pot .ring svg{position:absolute; inset:0; transform:rotate(-90deg)}
+  .pot .ring .bg{fill:none; stroke:#321912; stroke-width:8}
+  .pot .ring .fg{fill:none; stroke:url(#hot); stroke-width:8; stroke-linecap:round;
+    stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset .12s linear}
+  .pot .face{position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center}
+  .pot .face .broth{font-size:40px; line-height:1; filter:drop-shadow(0 0 12px rgba(232,98,60,.55))}
+  .pot .face .state{font-size:10px; color:var(--soft); margin-top:3px}
+  .pot .bubbles{position:absolute; inset:0; pointer-events:none}
+  .pot .bubbles i{
+    position:absolute; bottom:14px; width:6px; height:6px; border-radius:50%;
+    background:var(--steam); opacity:0;
+  }
+  .pot .bubbles i.go{animation:rise 1.6s ease-out infinite}
+  @keyframes rise{
+    0%{opacity:0; transform:translateY(0) scale(.6)}
+    20%{opacity:.7}
+    100%{opacity:0; transform:translateY(-46px) scale(1.3)}
+  }
+  .pot .queue{margin-top:6px; font-size:10.5px; color:var(--soft); min-height:14px}
+  .pot .queue b{color:var(--gold)}
+
+  .bowl .cnt{font-size:11px; color:var(--soft); margin:8px 0 4px}
+  .bowl .plates{display:flex; flex-wrap:wrap; gap:5px; min-height:46px}
+  .bowl .plates .p{
+    background:var(--card2); border:1px solid var(--line); border-radius:10px;
+    padding:3px 7px; font-size:11px; display:inline-flex; align-items:center; gap:3px;
+  }
+  .bowl .plates .p.new{animation:drop .5s ease}
+  @keyframes drop{
+    0%{transform:translateY(-26px) scale(.6); opacity:0}
+    60%{opacity:1}
+    100%{transform:translateY(0) scale(1)}
+  }
+  .bowl .full{font-size:10.5px; color:var(--muted); margin-top:6px}
+
+  .log{
+    margin-top:14px; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:12px 14px;
+  }
+  .log .t{font-size:12px; color:var(--soft); margin-bottom:6px}
+  .log ul{margin:0; padding:0; list-style:none}
+  .log li{font-size:11.5px; color:var(--ink); padding:3px 0; opacity:.92}
+  .log li .w{color:var(--brand2); font-weight:600}
+  .log li .ta{color:#9dbcf0; font-weight:600}
+
+  /* 底部操作 */
+  footer{
+    position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto;
+    display:flex; gap:10px; padding:12px 16px 16px;
+    background:linear-gradient(0deg,rgba(22,13,10,.98),rgba(22,13,10,.6));
+    border-top:1px solid var(--line);
+  }
+  footer button{
+    flex:1; border:none; border-radius:14px; padding:14px 0; font-size:14px;
+    font-weight:800; letter-spacing:.5px; cursor:pointer;
+  }
+  footer .next{background:linear-gradient(90deg,var(--brand),var(--brand2)); color:#1a0e08}
+  footer .next:disabled{opacity:.4; cursor:not-allowed}
+  footer .next:disabled:active{transform:none}
+  footer .feed{background:var(--card); color:var(--ink); border:1px solid var(--line)}
+
+  .toast{
+    position:fixed; top:14px; left:50%; transform:translate(-50%,-30px);
+    background:var(--card2); border:1px solid var(--line); color:var(--ink);
+    padding:10px 16px; border-radius:24px; font-size:12.5px; font-weight:600;
+    z-index:50; opacity:0; transition:transform .3s, opacity .3s; pointer-events:none;
+    box-shadow:0 10px 30px -8px rgba(0,0,0,.6);
+  }
+  .toast.show{transform:translate(-50%,0); opacity:1}
+
+  .finale{
+    position:fixed; inset:0; max-width:480px; margin:0 auto; z-index:60;
+    background:radial-gradient(120% 80% at 50% 20%,#3a1e16,#160d0a);
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:40px 28px; text-align:center;
+  }
+  .finale.show{display:flex; animation:fade .4s}
+  @keyframes fade{from{opacity:0} to{opacity:1}}
+  .finale .ring2{font-size:64px; margin-bottom:14px}
+  .finale h2{font-size:22px; justify-content:center; margin:0 0 6px}
+  .finale .p{color:var(--soft); font-size:13px; line-height:1.7; max-width:340px}
+  .finale .p b{color:var(--gold)}
+  .finale .stat{display:flex; gap:18px; margin:22px 0}
+  .finale .stat .s b{display:block; font-size:26px; color:var(--brand2)}
+  .finale .stat .s span{font-size:11px; color:var(--soft)}
+  .finale button{
+    margin-top:8px; background:linear-gradient(90deg,var(--brand),var(--brand2));
+    color:#1a0e08; border:none; border-radius:24px; padding:12px 30px;
+    font-size:14px; font-weight:800; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <div>
+      <h1>火锅<span class="em">购物车</span> · 逛一圈，吃饱饱</h1>
+      <div class="sub">货架即配菜区，他涮好的肉直接夹进你碗里</div>
+    </div>
+  </div>
+  <div class="meters">
+    <div class="meter">
+      <div class="lbl"><span>饱腹度</span><b id="full-v">0%</b></div>
+      <div class="bar full"><i id="full-bar" style="width:0%"></i></div>
+    </div>
+    <div class="meter">
+      <div class="lbl"><span>约会温度</span><b id="love-v">0%</b></div>
+      <div class="bar love"><i id="love-bar" style="width:0%"></i></div>
+    </div>
+    <div class="meter">
+      <div class="lbl"><span>一圈进度</span><b id="lap-v">0/6</b></div>
+      <div class="bar lap"><i id="lap-bar" style="width:0%"></i></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="lap" id="lap">
+    <span class="badge">已逛 <b id="lap-badge">0</b> 站</span>
+    <div class="track" id="track"></div>
+    <div class="hint-lap" id="hint-lap">推车出发 → 边走边拿边涮</div>
+  </div>
+
+  <h2 id="aisle-h"><span>当前货架</span><span class="aisle" id="aisle-name">—</span></h2>
+  <div class="shelf" id="shelf"></div>
+
+  <div class="station">
+    <div class="pot">
+      <span class="role"><span class="who">Ta</span> · 车尾涮锅</span>
+      <div class="ring">
+        <svg viewBox="0 0 100 100">
+          <defs><linearGradient id="hot" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#e8623c"/><stop offset="1" stop-color="#f0a83a"/>
+          </linearGradient></defs>
+          <circle class="bg" cx="50" cy="50" r="45"/>
+          <circle class="fg" id="ring-fg" cx="50" cy="50" r="45"/>
+        </svg>
+        <div class="face">
+          <div class="broth" id="broth">🍲</div>
+          <div class="state" id="pot-state">咕嘟咕嘟…</div>
+        </div>
+        <div class="bubbles" id="bubbles"></div>
+      </div>
+      <div class="queue" id="pot-q">锅里空着，抓点配菜吧</div>
+    </div>
+    <div class="bowl">
+      <span class="role"><span class="who">你</span> · 碗里到货</span>
+      <div class="cnt" id="bowl-cnt">碗空着 · 0 件</div>
+      <div class="plates" id="plates"></div>
+      <div class="full" id="bowl-full">每夹进一块，饱腹 +，默契 +</div>
+    </div>
+  </div>
+
+  <div class="log">
+    <div class="t">约会现场</div>
+    <ul id="log-ul"><li class="w">你</li><li class="ta">Ta</li></ul>
+  </div>
+</main>
+
+<footer>
+  <button class="feed" id="feed-btn">🥢 喂 Ta 一口</button>
+  <button class="next" id="next-btn">推车去下一站 →</button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<div class="finale" id="finale">
+  <div class="ring2">🍲🛒</div>
+  <h2>逛完一圈，晚饭 + 约会 同时完成</h2>
+  <div class="p">车回到原点，锅见底，碗见底，肚子是圆的。<br>这一圈里 <b id="f-eaten">0</b> 件配菜进了你碗里，<br>你们喂来喂去 <b id="f-fed">0</b> 次，默契升到 <b id="f-love">0%</b>。</div>
+  <div class="stat">
+    <div class="s"><b id="f-full">0%</b><span>饱腹度</span></div>
+    <div class="s"><b id="f-stops">0</b><span>走过货架</span></div>
+    <div class="s"><b id="f-love2">0%</b><span>约会温度</span></div>
+  </div>
+  <button id="again-btn">再逛一圈</button>
+</div>
+
+<script>
+const AISLES = [
+  {name:"叶菜区", items:[
+    {em:"🥬",name:"大白菜",sec:"3秒",t:3,kind:"veg"},
+    {em:"🥬",name:"生菜",sec:"2秒",t:2,kind:"veg"},
+    {em:"🌽",name:"玉米",sec:"6秒",t:6,kind:"veg"},
+    {em:"🥬",name:"菠菜",sec:"2秒",t:2,kind:"veg"},
+  ]},
+  {name:"菌菇区", items:[
+    {em:"🍄",name:"金针菇",sec:"5秒",t:5,kind:"mush"},
+    {em:"🍄",name:"香菇",sec:"6秒",t:6,kind:"mush"},
+    {em:"🍄",name:"平菇",sec:"5秒",t:5,kind:"mush"},
+    {em:"🧄",name:"蒜苗",sec:"3秒",t:3,kind:"veg"},
+  ]},
+  {name:"豆制品区", items:[
+    {em:"🧈",name:"嫩豆腐",sec:"8秒",t:8,kind:"tofu"},
+    {em:"🟫",name:"冻豆腐",sec:"8秒",t:8,kind:"tofu"},
+    {em:"🥢",name:"腐竹",sec:"5秒",t:5,kind:"tofu"},
+    {em:"🍜",name:"粉条",sec:"5秒",t:5,kind:"starch"},
+  ]},
+  {name:"冷鲜肉区", items:[
+    {em:"🥩",name:"肥牛卷",sec:"8秒",t:8,kind:"meat"},
+    {em:"🍖",name:"梅花肉",sec:"10秒",t:10,kind:"meat"},
+    {em:"🥓",name:"五花肉",sec:"10秒",t:10,kind:"meat"},
+    {em:"🥩",name:"小酥肉",sec:"6秒",t:6,kind:"meat"},
+  ]},
+  {name:"海鲜区", items:[
+    {em:"🦐",name:"基围虾",sec:"10秒",t:10,kind:"sea"},
+    {em:"🦑",name:"鱿鱼圈",sec:"9秒",t:9,kind:"sea"},
+    {em:"🐚",name:"蛤蜊",sec:"11秒",t:11,kind:"sea"},
+    {em:"🐙",name:"章鱼足",sec:"9秒",t:9,kind:"sea"},
+  ]},
+  {name:"主食区", items:[
+    {em:"🍜",name:"宽粉",sec:"5秒",t:5,kind:"starch"},
+    {em:"🍚",name:"米饭",sec:"0秒",t:0,kind:"starch"},
+    {em:"🥟",name:"小饺子",sec:"6秒",t:6,kind:"starch"},
+    {em:"🍞",name:"手撕面",sec:"5秒",t:5,kind:"starch"},
+  ]},
+];
+
+const FILL = {veg:6, mush:7, tofu:9, starch:10, meat:16, sea:14};
+
+const state = {
+  lap:0,            // 当前 aisle index, 0..5
+  visited:0,        // 已走过站数
+  full:0, love:0,
+  pot:null,         // {item, left} 正在涮
+  bowl:[],          // 煮好的盘子 [{em,name}]
+  newPlate:null,    // 刚下锅的标记，用于动画
+  fed:0, eaten:0,
+  ended:false,
+};
+
+const $ = id => document.getElementById(id);
+const el = (t,c,html)=>{ const e=document.createElement(t); if(c)e.className=c; if(html!=null)e.innerHTML=html; return e; }
+
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),1600);
+}
+
+function logPush(who, text){
+  const ul=$("log-ul");
+  const li=el("li", who==="me"?"w":"ta");
+  li.innerHTML = `<span>${who==="me"?"你":"Ta"}</span> · ${text}`;
+  ul.insertBefore(li, ul.firstChild);
+  while(ul.children.length>6) ul.removeChild(ul.lastChild);
+}
+
+function renderLap(){
+  const track=$("track");
+  track.innerHTML="";
+  // 起点+6站+回到起点 共7个点紧凑显示
+  const stops=7;
+  for(let i=0;i<stops;i++){
+    const done = i<state.visited;
+    const now  = i===state.lap;
+    const s=el("div","stop"+(done?" done":"")+(now?" now":""));
+    s.textContent = i===0 ? "起" : i===stops-1 ? "终" : String(i);
+    track.appendChild(s);
+  }
+  const cart=el("div","cart","🛒");
+  const ratio = stops>1 ? state.lap/(stops-1) : 0;
+  cart.style.left = (18 + ratio*(100-36))+"%"; // 与 track padding 呼应
+  track.appendChild(cart);
+  $("lap-badge").textContent = state.visited;
+  $("hint-lap").textContent = state.ended
+    ? "车回到原点，锅见底，碗见底。" : "推车出发 → 边走边拿边涮";
+}
+
+function renderShelf(){
+  const a = AISLES[state.lap];
+  $("aisle-name").textContent = `${a.name} · 共 ${a.items.length} 样`;
+  const sh=$("shelf"); sh.innerHTML="";
+  a.items.forEach((it,idx)=>{
+    const c=el("div","food");
+    if(state.pot && state.pot.idx===idx) c.classList.add("cooking");
+    c.appendChild(el("div","em",it.em));
+    c.appendChild(el("div","nm",it.name));
+    c.appendChild(el("div","sec",it.kind==="starch"&&it.t===0?"即食":it.sec));
+    c.onclick=()=>grab(idx);
+    sh.appendChild(c);
+  });
+}
+
+function grab(idx){
+  if(state.ended){ toast("这圈逛完啦，再来一圈？"); return; }
+  if(state.pot){ toast("锅里还在涮，等 Ta 捞出来～"); return; }
+  const a=AISLES[state.lap];
+  const it=a.items[idx];
+  state.pot={idx, item:it, left:it.t, max:it.t||1};
+  // 米饭即食
+  if(it.t===0){
+    finishCook();
+    return;
+  }
+  logPush("me", `把 ${it.em} ${it.name} 丢进车尾的锅`);
+  renderShelf(); renderPot();
+}
+
+function tick(){
+  if(!state.pot) return;
+  state.pot.left -= 0.12;
+  if(state.pot.left<=0){ finishCook(); }
+  else renderPot();
+}
+
+function finishCook(){
+  const p=state.pot; if(!p) return;
+  const it=p.item;
+  state.pot=null;
+  state.bowl.push({em:it.em,name:it.name,kind:it.kind});
+  state.newPlate=it;
+  const fill=FILL[it.kind]||8;
+  state.full=Math.min(100,state.full+fill);
+  state.love=Math.min(100,state.love+3);
+  state.eaten++;
+  logPush("ta", `把涮好的 ${it.em} ${it.name} 夹进你碗里`);
+  renderShelf(); renderPot(); renderBowl(); renderMeters();
+}
+
+function feedTa(){
+  if(state.ended) return;
+  if(!state.bowl.length){ toast("碗里还没货，先抓点菜下锅"); return; }
+  const p=state.bowl.pop();
+  state.fed++;
+  state.love=Math.min(100,state.love+6);
+  state.full=Math.min(100,state.full+2);
+  logPush("me", `🥢 夹起 ${p.em} ${p.name} 喂到 Ta 嘴边`);
+  toast(`Ta 笑了一下，约会温度 +6`);
+  renderBowl(); renderMeters();
+}
+
+function nextAisle(){
+  if(state.ended) return;
+  if(state.lap < AISLES.length-1){
+    state.lap++; state.visited=state.lap;
+    // 锅里若还涮着，随车带过去
+    logPush("me", `推车往前走，到了 ${AISLES[state.lap].name}`);
+    renderLap(); renderShelf(); renderMeters();
+  } else {
+    state.visited=AISLES.length; state.ended=true;
+    if(state.pot){ state.pot=null; } // 收尾
+    renderLap(); renderShelf(); renderPot();
+    showFinale();
+  }
+}
+
+function showFinale(){
+  const f=$("finale");
+  $("f-eaten").textContent=state.eaten;
+  $("f-fed").textContent=state.fed;
+  $("f-love").textContent=Math.round(state.love)+"%";
+  $("f-love2").textContent=Math.round(state.love)+"%";
+  $("f-full").textContent=Math.round(state.full)+"%";
+  $("f-stops").textContent=state.visited;
+  f.classList.add("show");
+}
+
+function renderPot(){
+  const fg=$("ring-fg");
+  if(state.pot){
+    const ratio=Math.max(0,state.pot.left/state.pot.max);
+    fg.style.strokeDashoffset = String(283*(1-ratio));
+    $("broth").textContent="🍲";
+    $("pot-state").textContent=`涮 ${state.pot.item.name} · 剩 ${Math.ceil(state.pot.left)}秒`;
+    $("pot-q").innerHTML=`锅里：<b>${state.pot.item.em} ${state.pot.item.name}</b>`;
+    bubbleOn(true);
+  } else {
+    fg.style.strokeDashoffset="283";
+    $("broth").textContent="🍲";
+    $("pot-state").textContent= state.ended ? "锅见底" : "咕嘟咕嘟…";
+    $("pot-q").textContent = state.ended ? "这圈到头啦" : (state.bowl.length? "碗里等下一块" : "锅里空着，抓点配菜吧");
+    bubbleOn(false);
+  }
+}
+
+let bubbleInt=null;
+function bubbleOn(on){
+  const wrap=$("bubbles");
+  if(on && !bubbleInt){
+    // 生成气泡
+    for(let i=0;i<5;i++){
+      const b=el("i");
+      b.style.left=(20+Math.random()*60)+"%";
+      b.style.animationDelay=(Math.random()*1.2)+"s";
+      b.classList.add("go");
+      wrap.appendChild(b);
+    }
+    bubbleInt=setInterval(()=>{
+      // 偶尔补一个，保持沸腾感
+    },800);
+  } else if(!on && bubbleInt){
+    wrap.innerHTML="";
+    clearInterval(bubbleInt); bubbleInt=null;
+  }
+}
+
+function renderBowl(){
+  const plates=$("plates");
+  plates.innerHTML="";
+  // 倒序展示最新在最前
+  state.bowl.slice().reverse().forEach((p)=>{
+    const d=el("div","p"+(p===state.newPlate?" new":""));
+    d.innerHTML=`${p.em} ${p.name}`;
+    plates.appendChild(d);
+  });
+  state.newPlate=null;
+  $("bowl-cnt").textContent = state.bowl.length? `碗里 · ${state.bowl.length} 件` : "碗空着 · 0 件";
+  $("bowl-full").textContent = state.bowl.length? "等 Ta 夹下一块，或你喂 Ta 一口" : "抓货架上的配菜下锅吧";
+}
+
+function renderMeters(){
+  $("full-v").textContent=Math.round(state.full)+"%";
+  $("full-bar").style.width=state.full+"%";
+  $("love-v").textContent=Math.round(state.love)+"%";
+  $("love-bar").style.width=state.love+"%";
+  $("lap-v").textContent=`${state.visited}/${AISLES.length}`;
+  $("lap-bar").style.width=(state.visited/AISLES.length*100)+"%";
+}
+
+function init(){
+  renderLap(); renderShelf(); renderPot(); renderBowl(); renderMeters();
+  $("feed-btn").onclick=feedTa;
+  $("next-btn").onclick=nextAisle;
+  $("again-btn").onclick=()=>{ location.reload(); };
+  setInterval(tick, 120);
+}
+init();
+</script>
+</body>
+</html>

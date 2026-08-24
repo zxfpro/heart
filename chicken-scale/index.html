@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>炸鸡天平秤 · 这次允许吃几块</title>
+<style>
+  :root{
+    --bg:#faf3e8; --card:#ffffff; --ink:#2a2018; --soft:#8a7a6a;
+    --brand:#e8a33a; --brand2:#d4502a; --ok:#4a9b5e; --no:#c9462f;
+    --line:#efe2d2; --chip:#f6ecdc; --gold:#f5c542;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(180deg,#fbf4e8,#f3e6cf); color:var(--ink);
+    min-height:100dvh; max-width:480px; margin:0 auto; padding:0 0 96px;
+    line-height:1.5;
+  }
+  header{
+    position:sticky; top:0; z-index:10; background:rgba(250,243,232,.93);
+    backdrop-filter:blur(8px); padding:14px 16px 10px; border-bottom:1px solid var(--line);
+  }
+  header .row{display:flex; align-items:center; justify-content:space-between}
+  header h1{font-size:18px; margin:0; font-weight:800; letter-spacing:.5px}
+  header .sub{font-size:12px; color:var(--soft); margin-top:2px}
+  .weight-pill{
+    font-size:11px; font-weight:700; color:var(--soft); background:var(--chip);
+    padding:5px 11px; border-radius:20px; display:flex; align-items:center; gap:4px;
+  }
+  .weight-pill .lock{font-size:12px}
+  .tabs{display:flex; gap:6px; margin-top:12px}
+  .tab{
+    flex:1; padding:9px 0; text-align:center; font-size:13px; font-weight:600;
+    border:1px solid var(--line); border-radius:10px; background:var(--card);
+    color:var(--soft); cursor:pointer;
+  }
+  .tab.active{background:var(--ink); color:#fff; border-color:var(--ink)}
+  main{padding:16px}
+  h2{font-size:14px; margin:18px 0 10px; color:var(--ink)}
+  .hint{font-size:12px; color:var(--soft); margin:-4px 0 12px}
+
+  /* 饭账 */
+  .meal{
+    display:flex; align-items:center; gap:12px; padding:13px 14px;
+    border:1px solid var(--line); background:var(--card); border-radius:14px;
+    margin-bottom:8px; cursor:pointer; transition:transform .08s;
+  }
+  .meal:active{transform:scale(.98)}
+  .meal.on{border-color:var(--ok); background:#f4fbf6}
+  .meal .em{font-size:26px; line-height:1; width:34px; text-align:center}
+  .meal .nm{font-size:14px; font-weight:700; flex:1}
+  .meal .nm small{display:block; font-size:11px; font-weight:400; color:var(--soft); margin-top:1px}
+  .meal .tick{
+    width:24px; height:24px; border-radius:50%; border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-size:13px;
+    color:transparent; flex-shrink:0;
+  }
+  .meal.on .tick{background:var(--ok); border-color:var(--ok); color:#fff}
+  .meter{height:8px; border-radius:8px; background:#eadfce; overflow:hidden; margin-top:6px}
+  .meter i{display:block; height:100%; background:linear-gradient(90deg,var(--brand),var(--gold))}
+
+  /* 天平秤 */
+  .scale-wrap{
+    background:var(--card); border:1px solid var(--line); border-radius:20px;
+    padding:20px 16px 18px; text-align:center; margin-top:4px;
+  }
+  .scale{
+    height:180px; position:relative; margin:6px auto 14px; max-width:320px;
+  }
+  .beam{
+    position:absolute; top:38px; left:50%; width:240px; height:8px; margin-left:-120px;
+    background:linear-gradient(180deg,#caa15f,#8a6a32); border-radius:4px;
+    transform-origin:50% 50%; transition:transform .25s ease;
+  }
+  .post{
+    position:absolute; top:46px; left:50%; width:10px; height:90px; margin-left:-5px;
+    background:linear-gradient(90deg,#8a6a32,#caa15f); border-radius:4px;
+  }
+  .base{
+    position:absolute; bottom:8px; left:50%; width:90px; height:14px; margin-left:-45px;
+    background:linear-gradient(180deg,#caa15f,#7a5a26); border-radius:8px;
+  }
+  .pivot{
+    position:absolute; top:34px; left:50%; width:20px; height:20px; margin-left:-10px;
+    background:radial-gradient(circle,#f5c542,#8a6a32); border-radius:50%; z-index:3;
+  }
+  .pan{
+    position:absolute; top:46px; width:54px; height:54px; border-radius:50%;
+    background:radial-gradient(circle at 50% 35%,#fff,#e6d3b8); border:1px solid #d4bf9f;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    box-shadow:0 4px 10px -4px rgba(80,60,30,.4); transition:transform .25s ease;
+  }
+  .pan .pem{font-size:22px; line-height:1}
+  .pan .pnum{font-size:13px; font-weight:800; color:var(--ink); margin-top:1px}
+  .pan .plbl{font-size:9px; color:var(--soft)}
+  .panL{left:50%; margin-left:-150px}
+  .panR{left:50%; margin-left:96px}
+  .rope{position:absolute; top:46px; width:1px; height:30px; background:#a89070; z-index:1}
+  .ropeL{left:50%; margin-left:-123px}
+  .ropeR{left:50%; margin-left:123px}
+  .weigh-btn{
+    border:0; background:var(--ink); color:#fff; font-weight:800; font-size:15px;
+    padding:13px 0; border-radius:14px; cursor:pointer; width:100%; transition:transform .08s;
+  }
+  .weigh-btn:active{transform:scale(.98)}
+  .weigh-btn:disabled{opacity:.4}
+  .hidden-weight{
+    margin-top:10px; font-size:12px; color:var(--soft); display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .hidden-weight b{
+    font-family:ui-monospace,monospace; font-size:13px; color:var(--soft);
+    background:var(--chip); padding:3px 10px; border-radius:6px; letter-spacing:2px;
+  }
+  .reveal{
+    background:linear-gradient(180deg,#fff4dd,#fde3b8); border:2px solid var(--brand);
+    border-radius:18px; padding:18px 14px; margin-top:14px;
+    box-shadow:0 10px 28px -14px rgba(232,163,58,.6);
+  }
+  .reveal .big{font-size:30px; font-weight:900; color:var(--brand2)}
+  .reveal .big small{font-size:14px; font-weight:700; color:var(--ink); margin-left:2px}
+  .reveal .sub{font-size:12px; color:var(--soft); margin-top:4px}
+
+  /* 点鸡 */
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
+  .item{
+    border:1px solid var(--line); background:var(--card); border-radius:14px;
+    padding:14px 10px 10px; text-align:center; cursor:pointer; position:relative;
+    transition:transform .08s;
+  }
+  .item:active{transform:scale(.96)}
+  .item.in{border-color:var(--brand); background:#fdf0dd}
+  .item.blocked{opacity:.45}
+  .item .em{font-size:32px; line-height:1}
+  .item .nm{font-size:13px; margin-top:6px; font-weight:700}
+  .item .kcal{font-size:10px; color:var(--soft); margin-top:1px}
+  .item .cnt{
+    position:absolute; top:-6px; right:-6px; background:var(--brand2); color:#fff;
+    font-size:11px; font-weight:700; min-width:20px; height:20px; border-radius:20px;
+    display:none; align-items:center; justify-content:center; padding:0 5px;
+  }
+  .item.in .cnt{display:flex}
+  .item .lock{
+    position:absolute; top:6px; right:8px; font-size:12px; color:var(--no);
+  }
+  .cap-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+    margin-bottom:12px;
+  }
+  .cap-bar .l{font-size:12px; color:var(--soft)}
+  .cap-bar .r{font-size:13px; font-weight:800}
+  .cap-bar .r b{color:var(--brand2)}
+  .cap-bar .r s{color:var(--ok); text-decoration:none}
+
+  footer{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%;
+    max-width:480px; background:rgba(250,243,232,.95); backdrop-filter:blur(8px);
+    border-top:1px solid var(--line); padding:10px 16px; display:flex; gap:10px; align-items:center;
+  }
+  footer .sum{flex:1; font-size:13px}
+  footer .sum b{color:var(--brand2)}
+  footer button{
+    border:0; background:var(--ink); color:#fff; font-weight:700; font-size:14px;
+    padding:11px 18px; border-radius:12px; cursor:pointer;
+  }
+  footer button:disabled{opacity:.4}
+
+  .toast{
+    position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    background:rgba(42,32,24,.94); color:#fff; padding:18px 24px; border-radius:16px;
+    text-align:center; z-index:50; font-size:14px; opacity:0; pointer-events:none;
+    transition:opacity .2s; max-width:80%;
+  }
+  .toast.show{opacity:1}
+  .toast .big{font-size:28px; margin-bottom:6px}
+
+  /* 天平账本 */
+  .creed{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px; margin-bottom:10px;
+  }
+  .creed .n{
+    display:inline-block; width:24px; height:24px; line-height:24px; border-radius:50%;
+    background:var(--ink); color:var(--gold); font-size:12px; font-weight:800; margin-right:8px;
+    vertical-align:middle;
+  }
+  .creed .t{font-size:13px; color:var(--ink); display:inline}
+  .creed .d{font-size:12px; color:var(--soft); margin:6px 0 0 32px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="row">
+    <div>
+      <h1>炸鸡天平秤</h1>
+      <div class="sub">点炸鸡前先站上秤，只许看不许问体重</div>
+    </div>
+    <div class="weight-pill"><span class="lock">🔒</span><span id="weightPill">?? kg</span></div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-v="meals">今日饭账</div>
+    <div class="tab" data-v="scale">站上天平</div>
+    <div class="tab" data-v="order">点炸鸡</div>
+    <div class="tab" data-v="why">天平账本</div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<footer>
+  <div class="sum">已选 <b id="basketCount">0</b> 块 · <span id="capSummary">还没上秤</span></div>
+  <button id="orderBtn" disabled>下单</button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const MEALS = [
+  {id:"breakfast", em:"🥣", nm:"吃了早餐",   d:"垫底的饭，不吃伤胃"},
+  {id:"lunch",     em:"🍱", nm:"吃了午餐",   d:"正经一顿，别糊弄"},
+  {id:"dinner",    em:"🍲", nm:"吃了晚餐",   d:"有菜有饭，别只啃鸡"},
+  {id:"water",    em:"💧", nm:"喝够水",      d:"今天 1.5L 以上"},
+  {id:"veggie",   em:"🥦", nm:"吃了蔬菜",    d:"绿叶子优先，解腻"},
+  {id:"fruit",    em:"🍎", nm:"吃了水果",    d:"一个拳头大小"}
+];
+
+const CHICKENS = [
+  {id:"nugget", em:"🍗", nm:"原味鸡块",  kcal:"约 150 kcal"},
+  {id:"wing",   em:"🍗", nm:"香辣鸡翅",  kcal:"约 220 kcal"},
+  {id:"drum",   em:"🍗", nm:"黄金鸡腿",  kcal:"约 260 kcal"},
+  {id:"pop",    em:"🍗", nm:"鸡米花",    kcal:"约 180 kcal"},
+  {id:"burger", em:"🍔", nm:"炸鸡汉堡",  kcal:"约 550 kcal"},
+  {id:"wrap",   em:"🌯", nm:"鸡肉卷",    kcal:"约 420 kcal"}
+];
+
+const SIDES = [
+  {id:"cola",  em:"🥤", nm:"可乐",   kcal:"约 180 kcal"},
+  {id:"fries", em:"🍟", nm:"薯条",   kcal:"约 320 kcal"}
+];
+
+const state = {
+  view:"meals",
+  meals:new Set(),
+  weighed:false,
+  basket:{},
+  sides:{},
+  wobble:0
+};
+
+function $(s){return document.querySelector(s)}
+function el(t,c,h){const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e}
+
+function virtue(){ return state.meals.size; }
+function basketCount(){ return Object.values(state.basket).reduce((a,b)=>a+b,0); }
+function allowance(){
+  if(!state.weighed) return 0;
+  return virtue();
+}
+
+function render(){
+  const app=$("#app"); app.innerHTML="";
+  if(state.view==="meals")      renderMeals(app);
+  else if(state.view==="scale") renderScale(app);
+  else if(state.view==="order") renderOrder(app);
+  else                          renderWhy(app);
+  syncFooter();
+}
+
+/* ---- 饭账 ---- */
+function renderMeals(app){
+  app.appendChild(el("h2","","今日饭账"));
+  app.appendChild(el("div","hint","每好好吃一顿正餐、补一杯水、来一份菜果，天平右边就多一份清白——清白越多，待会儿能吃的鸡越多。"));
+  MEALS.forEach(m=>{
+    const on=state.meals.has(m.id);
+    const c=el("div","meal"+(on?" on":""));
+    c.appendChild(el("div","em",m.em));
+    const nm=el("div","nm",`${m.nm}<small>${m.d}</small>`);
+    c.appendChild(nm);
+    c.appendChild(el("div","tick","✓"));
+    c.onclick=()=>{
+      if(state.meals.has(m.id)) state.meals.delete(m.id); else state.meals.add(m.id);
+      render();
+    };
+    app.appendChild(c);
+  });
+
+  const v=virtue();
+  app.appendChild(el("h2","","清白分"));
+  app.appendChild(el("div","hint","站上秤时，这些清白分会变成「允许吃几块」。一份清白 = 一块鸡。"));
+  const m=el("div");
+  m.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--soft)"><span>今日攒下</span><b style="color:var(--brand)">${v} 块</b></div>`;
+  m.appendChild(el("div","meter",`<i style="width:${Math.min(100,v/6*100)}%"></i>`));
+  app.appendChild(m);
+
+  if(!state.weighed){
+    app.appendChild(el("h2","","下一步"));
+    app.appendChild(el("div","hint","饭账记好了，去「站上天平」看看这次允许吃几块。"));
+  } else if(virtue() > 0) {
+    app.appendChild(el("h2","","天平变了"));
+    app.appendChild(el("div","hint","你又好好吃了一顿，允许块数已经更新，可以回「点炸鸡」多吃一块。"));
+  }
+}
+
+/* ---- 天平秤 ---- */
+function renderScale(app){
+  app.appendChild(el("h2","","站上天平"));
+  app.appendChild(el("div","hint","点「站上去」——秤会偷偷读你的体重，但屏幕绝不显示。它只回答一个问题：这次允许吃几块。"));
+
+  const wrap=el("div","scale-wrap");
+  const scale=el("div","scale");
+  scale.innerHTML = scaleSVG();
+  wrap.appendChild(scale);
+
+  const v=virtue();
+  const b=basketCount();
+  const allow=allowance();
+  const tilt = computeTilt(b, allow);
+
+  const beam=scale.querySelector(".beam");
+  const panL=scale.querySelector(".panL");
+  const panR=scale.querySelector(".panR");
+  applyTilt(beam, panL, panR, tilt);
+
+  scale.querySelector(".panL .pnum").textContent = state.weighed ? b : "—";
+  scale.querySelector(".panR .pnum").textContent = v;
+
+  const btn=el("button","weigh-btn","站上去");
+  btn.onclick=()=>{ weigh(btn); };
+  btn.disabled = v===0;
+  if(v===0) btn.textContent="先去饭账记一顿饭";
+  wrap.appendChild(btn);
+
+  const hw=el("div","hidden-weight");
+  hw.innerHTML=`<span>你的体重</span><b>${state.weighed?"已称量":"???"}</b>`;
+  wrap.appendChild(hw);
+
+  if(state.weighed){
+    const r=el("div","reveal");
+    r.innerHTML=`<div class="big">${allow}<small>块</small></div><div class="sub">体重已藏好 · 只管开吃，想多吃一块就去「今日饭账」再好好吃一顿</div>`;
+    wrap.appendChild(r);
+  }
+  app.appendChild(wrap);
+}
+
+function computeTilt(basket, allow){
+  // right pan = virtue (=allow). left pan = basket.
+  // tilt degrees: right heavier => beam tilts so right goes down (positive deg in our setup)
+  const r = state.weighed ? allow : virtue();
+  const diff = (r) - (basket);
+  // clamp ±18deg
+  let deg = diff * 6;
+  if(deg>18) deg=18; if(deg<-18) deg=-18;
+  return deg;
+}
+function applyTilt(beam, panL, panR, deg){
+  beam.style.transform = `rotate(${deg}deg)`;
+  // pans counter-rotate so they stay upright-ish, and translate down on the heavy side
+  panL.style.transform = `rotate(${-deg}deg) translateY(${deg<0?6:0}px)`;
+  panR.style.transform = `rotate(${-deg}deg) translateY(${deg>0?6:0}px)`;
+}
+function scaleSVG(){return `
+  <div class="base"></div>
+  <div class="post"></div>
+  <div class="pivot"></div>
+  <div class="beam">
+    <div class="rope ropeL"></div>
+    <div class="rope ropeR"></div>
+    <div class="pan panL">
+      <div class="pem">🍗</div><div class="pnum">0</div><div class="plbl">今天想吃</div>
+    </div>
+    <div class="pan panR">
+      <div class="pem">🍱</div><div class="pnum">0</div><div class="plbl">好好吃饭</div>
+    </div>
+  </div>
+`;}
+
+function weigh(btn){
+  if(virtue()===0){ showToast("先在「今日饭账」记一顿正餐，再上秤"); return; }
+  btn.disabled=true; btn.textContent="称量中…";
+  const beam=document.querySelector(".beam");
+  const panL=document.querySelector(".panL");
+  const panR=document.querySelector(".panR");
+  let t=0;
+  const iv=setInterval(()=>{
+    const w=(Math.random()*2-1)*14;
+    applyTilt(beam,panL,panR,w); t++;
+    if(t>7){
+      clearInterval(iv);
+      state.weighed=true;
+      render();
+      const a=allowance();
+      showToast(`<b>这次允许吃 ${a} 块</b><br><span style="opacity:.85">体重已藏好，别问了，开吃</span>`,"⚖️");
+    }
+  },90);
+}
+
+/* ---- 点鸡 ---- */
+function renderOrder(app){
+  if(!state.weighed){
+    app.appendChild(el("div","hint","先去「站上天平」称一下，才知道这次允许吃几块。"));
+    const fake=el("button","weigh-btn","去站秤 →");
+    fake.style.background="var(--brand2)";
+    fake.onclick=()=>{ go("scale"); };
+    app.appendChild(fake);
+    return;
+  }
+  const allow=allowance();
+  const b=basketCount();
+  app.appendChild(el("h2","","点炸鸡"));
+  app.appendChild(el("div","hint","每多拿一块，天平左边就重一分。超过允许块数的，会被锁——想解锁，回去好好吃顿饭再来。"));
+
+  const cap=el("div","cap-bar");
+  cap.innerHTML=`<div class="l">天平允许</div><div class="r"><s>清白 ${virtue()}</s> · <b>${allow}</b> 块</div>`;
+  app.appendChild(cap);
+
+  const grid=el("div","grid");
+  CHICKENS.forEach(c=>{
+    const n=state.basket[c.id]||0;
+    const blocked = b>=allow && n===0;
+    const item=el("div","item"+(n?" in":"")+(blocked?" blocked":""));
+    item.appendChild(el("div","em",c.em));
+    item.appendChild(el("div","nm",c.nm));
+    item.appendChild(el("div","kcal",c.kcal));
+    item.appendChild(el("div","cnt",String(n)));
+    if(blocked) item.appendChild(el("div","lock","🔒"));
+    item.onclick=()=>{
+      if(blocked){
+        showToast(`再要一块？天平不让。<br><span style="opacity:.85">回「今日饭账」好好吃一顿，清白多了就行</span>`);
+        return;
+      }
+      if(b>=allow){
+        showToast("允许块数用完了，先回饭账补一顿");
+        return;
+      }
+      state.basket[c.id]=(state.basket[c.id]||0)+1;
+      render();
+    };
+    // long-press / second tap to remove handled below via a remove affordance on active items
+    item.oncontextmenu=(e)=>{
+      e.preventDefault();
+      if(state.basket[c.id]){ state.basket[c.id]--; if(!state.basket[c.id]) delete state.basket[c.id]; render(); }
+    };
+    grid.appendChild(item);
+  });
+  app.appendChild(grid);
+
+  app.appendChild(el("h2","","配餐（不计入天平，每样限 1）"));
+  const grid2=el("div","grid");
+  SIDES.forEach(s=>{
+    const on=!!state.sides[s.id];
+    const item=el("div","item"+(on?" in":""));
+    item.appendChild(el("div","em",s.em));
+    item.appendChild(el("div","nm",s.nm));
+    item.appendChild(el("div","kcal",s.kcal));
+    item.appendChild(el("div","cnt",on?"1":""));
+    item.onclick=()=>{
+      state.sides[s.id]=!state.sides[s.id];
+      render();
+    };
+    grid2.appendChild(item);
+  });
+  app.appendChild(grid2);
+}
+
+/* ---- 天平账本 ---- */
+function renderWhy(app){
+  app.appendChild(el("h2","","天平三条规矩"));
+  const creed=[
+    {n:1, t:"体重永远不显示", d:"秤偷偷读，但屏幕只回答「允许吃几块」。问也没用，越问越少。"},
+    {n:2, t:"清白换鸡，一顿一块", d:"今天好好吃了几顿正餐、补了多少菜果水，天平右边就攒几份清白——一份清白，换一块鸡。"},
+    {n:3, t:"想吃多一点，先去吃饭", d:"超了允许块数会被锁。解锁的办法只有一条：回饭账再好好吃一顿，清白多了，天平自然松口。"}
+  ];
+  creed.forEach(c=>{
+    const x=el("div","creed");
+    x.innerHTML=`<span class="n">${c.n}</span><span class="t">${c.t}</span><div class="d">${c.d}</div>`;
+    app.appendChild(x);
+  });
+  app.appendChild(el("div","hint","这不是减肥工具，是让炸鸡和好好吃饭站在同一条秤上——两边都得有点，天平才平。"));
+}
+
+/* ---- footer / toast / nav ---- */
+function syncFooter(){
+  const b=basketCount();
+  const allow=allowance();
+  $("#basketCount").textContent=b;
+  if(!state.weighed){
+    $("#capSummary").textContent="还没上秤";
+    $("#orderBtn").disabled=true;
+    $("#orderBtn").textContent="去站秤";
+  } else if(b===0){
+    $("#capSummary").textContent=`允许 ${allow} 块`;
+    $("#orderBtn").disabled=true;
+    $("#orderBtn").textContent="先选几块";
+  } else if(b>allow){
+    $("#capSummary").innerHTML=`<span style="color:var(--no)">超了，回饭账补</span>`;
+    $("#orderBtn").disabled=true;
+    $("#orderBtn").textContent="超了";
+  } else {
+    $("#capSummary").textContent=`允许 ${allow} · 已选 ${b}`;
+    $("#orderBtn").disabled=false;
+    $("#orderBtn").textContent="下单";
+  }
+}
+
+function showToast(html, big){
+  const t=$("#toast"); t.innerHTML=(big?`<div class="big">${big}</div>`:"")+html;
+  t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),3000);
+}
+
+function go(v){
+  state.view=v;
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active", x.dataset.v===v));
+  render();
+}
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick=()=>go(t.dataset.v);
+});
+
+$("#orderBtn").onclick=()=>{
+  const b=basketCount();
+  const allow=allowance();
+  if(b===0){ showToast("先选几块鸡"); return; }
+  if(b>allow){ showToast("超了，回饭账补一顿"); return; }
+  showToast(`<b>下单成功，${b} 块炸鸡</b><br><span style="opacity:.85">天平没糊，体重没漏，开吃 🍗</span>`,"✅");
+};
+
+render();
+</script>
+</body>
+</html>

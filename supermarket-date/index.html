@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>超市约会 · 今晚吃什么</title>
+<style>
+  :root{
+    --bg:#fbf6ee; --card:#ffffff; --ink:#2b2420; --soft:#8a7d72;
+    --brand:#e8623c; --brand2:#f0a83a; --ok:#3fa66a; --no:#d2503f;
+    --line:#efe6da; --chip:#f6ede1;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(180deg,#fdf8ef,#f6ecdd); color:var(--ink);
+    min-height:100dvh; max-width:480px; margin:0 auto; padding:0 0 96px;
+    line-height:1.5;
+  }
+  header{
+    position:sticky; top:0; z-index:10; background:rgba(251,246,238,.92);
+    backdrop-filter:blur(8px); padding:14px 16px 10px; border-bottom:1px solid var(--line);
+  }
+  header .row{display:flex; align-items:center; justify-content:space-between}
+  header h1{font-size:18px; margin:0; font-weight:800; letter-spacing:.5px}
+  header .sub{font-size:12px; color:var(--soft); margin-top:2px}
+  .tabs{display:flex; gap:6px; margin-top:12px}
+  .tab{
+    flex:1; padding:9px 0; text-align:center; font-size:13px; font-weight:600;
+    border:1px solid var(--line); border-radius:10px; background:var(--card);
+    color:var(--soft); cursor:pointer;
+  }
+  .tab.active{background:var(--ink); color:#fff; border-color:var(--ink)}
+  main{padding:14px 16px}
+  h2{font-size:14px; margin:18px 0 10px; color:var(--ink)}
+  .hint{font-size:12px; color:var(--soft); margin:-4px 0 10px}
+  .who{
+    font-size:11px; font-weight:700; color:var(--brand);
+    background:#fbe7df; display:inline-block; padding:2px 8px; border-radius:20px;
+  }
+  .who.ta{color:#7a5cb0; background:#eee4f6}
+  .prefs{display:flex; flex-wrap:wrap; gap:8px}
+  .pref{
+    border:1px solid var(--line); background:var(--card); border-radius:24px;
+    padding:8px 12px; font-size:13px; cursor:pointer; user-select:none;
+    display:flex; align-items:center; gap:5px; color:var(--soft);
+  }
+  .pref .dot{width:8px; height:8px; border-radius:50%; background:#d8ccbe}
+  .pref.on{color:var(--no); border-color:#f0c4bd; background:#fdeeec}
+  .pref.on .dot{background:var(--no)}
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+  .item{
+    border:1px solid var(--line); background:var(--card); border-radius:14px;
+    padding:12px 6px 8px; text-align:center; cursor:pointer; position:relative;
+    transition:transform .08s;
+  }
+  .item:active{transform:scale(.96)}
+  .item .em{font-size:30px; line-height:1}
+  .item .nm{font-size:12px; margin-top:6px; color:var(--ink)}
+  .item .cnt{
+    position:absolute; top:-6px; right:-6px; background:var(--brand); color:#fff;
+    font-size:11px; font-weight:700; min-width:20px; height:20px; border-radius:20px;
+    display:none; align-items:center; justify-content:center; padding:0 5px;
+  }
+  .item.in .cnt{display:flex}
+  .item.in{border-color:var(--brand); background:#fdf0eb}
+  .item.blocked{opacity:.4}
+  .item .blk{
+    position:absolute; left:0; right:0; bottom:-1px; font-size:9px; color:var(--no);
+    background:#fdeeec; border-radius:0 0 13px 13px; padding:1px 0;
+  }
+  .rec{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:14px; margin-top:8px;
+  }
+  .rec.top{
+    border:2px solid var(--brand); box-shadow:0 8px 24px -12px rgba(232,98,60,.5);
+  }
+  .rec .name{font-size:16px; font-weight:800; margin-bottom:2px}
+  .rec .meta{font-size:12px; color:var(--soft); margin-bottom:8px}
+  .rec .badge{
+    display:inline-block; font-size:11px; font-weight:700; color:#fff;
+    background:var(--ok); padding:2px 9px; border-radius:20px; margin-bottom:8px;
+  }
+  .rec .have{font-size:12px; color:var(--ok)}
+  .rec .miss{font-size:12px; color:var(--brand2)}
+  .rec .why{font-size:11px; color:var(--soft); margin-top:6px}
+  .empty{text-align:center; color:var(--soft); font-size:13px; padding:24px 8px}
+  .stepper{display:flex; gap:6px; margin:12px 0 4px}
+  .step{flex:1; text-align:center; font-size:11px; color:var(--soft); padding:9px 4px; border:1px solid var(--line); border-radius:10px; background:var(--card); cursor:pointer}
+  .step.on{color:var(--brand); border-color:var(--brand); background:#fdf0eb; font-weight:700}
+  .step.done{color:var(--ok); border-color:#c9e4d3; background:#f4fbf6}
+  .step .n{display:inline-block; width:18px; height:18px; line-height:18px; border-radius:50%; background:var(--chip); color:var(--soft); font-size:11px; margin-right:4px; vertical-align:middle}
+  .step.on .n{background:var(--brand); color:#fff}
+  .step.done .n{background:var(--ok); color:#fff}
+  .subtabs{display:flex; gap:6px; margin:10px 0}
+  .subtab{flex:1; padding:8px 0; text-align:center; font-size:12px; font-weight:600; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--soft); cursor:pointer}
+  .subtab.active{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .conflict{border:1px solid var(--line); background:var(--card); border-radius:14px; padding:11px 12px; margin-bottom:8px}
+  .conflict .top{display:flex; align-items:center; justify-content:space-between; gap:8px}
+  .conflict .mud{font-size:13px; color:var(--no)}
+  .conflict .clean{font-size:13px; color:var(--ink); font-weight:600}
+  .conflict .pick{font-size:12px; color:var(--soft)}
+  .conflict .dim{font-size:13px; color:var(--soft); opacity:.6}
+  .season{display:flex; flex-wrap:wrap; gap:6px; margin-top:9px}
+  .btn-mini{font-size:11px; padding:6px 11px; border-radius:20px; border:1px solid var(--brand); background:#fff; color:var(--brand); font-weight:700; cursor:pointer; white-space:nowrap}
+  .btn-mini.on{background:var(--brand); color:#fff}
+  .meter{
+    height:8px; border-radius:8px; background:#eadfce; overflow:hidden; margin-top:6px;
+  }
+  .meter i{display:block; height:100%; background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  footer{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%;
+    max-width:480px; background:rgba(251,246,238,.95); backdrop-filter:blur(8px);
+    border-top:1px solid var(--line); padding:10px 16px; display:flex; gap:10px; align-items:center;
+  }
+  footer .cart{flex:1; font-size:13px}
+  footer .cart b{color:var(--brand)}
+  footer button{
+    border:0; background:var(--ink); color:#fff; font-weight:700; font-size:14px;
+    padding:11px 18px; border-radius:12px; cursor:pointer;
+  }
+  footer button:disabled{opacity:.4}
+  .toast{
+    position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    background:rgba(43,36,32,.94); color:#fff; padding:18px 24px; border-radius:16px;
+    text-align:center; z-index:50; font-size:14px; opacity:0; pointer-events:none;
+    transition:opacity .2s; max-width:80%;
+  }
+  .toast.show{opacity:1}
+  .toast .big{font-size:28px; margin-bottom:6px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="row">
+    <div>
+      <h1>超市约会</h1>
+      <div class="sub">推着车，今晚吃什么，两个人说了算</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-p="me">我的口味</div>
+    <div class="tab" data-p="ta">Ta的口味</div>
+    <div class="tab" data-p="shop">逛超市</div>
+    <div class="tab" data-p="reconcile">吵架和好</div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<footer>
+  <div class="cart">购物车 <b id="cartCount">0</b> 件 · <span id="prefSummary">无忌口</span></div>
+  <button id="matchBtn">心动推荐</button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PRODUCTS = [
+  {id:"egg",    name:"鸡蛋",  em:"🥚"},
+  {id:"tomato", name:"番茄",  em:"🍅"},
+  {id:"onion",  name:"洋葱",  em:"🧅"},
+  {id:"beef",   name:"牛肉",  em:"🥩"},
+  {id:"chicken",name:"鸡肉",  em:"🍗"},
+  {id:"fish",   name:"鱼",    em:"🐟"},
+  {id:"shrimp", name:"虾",    em:"🦐"},
+  {id:"peanut", name:"花生",  em:"🥜"},
+  {id:"garlic", name:"蒜",    em:"🧄"},
+  {id:"broccoli",name:"西兰花",em:"🥦"},
+  {id:"pork",   name:"猪肉",  em:"🥓"},
+  {id:"carrot", name:"胡萝卜",em:"🥕"},
+  {id:"cucumber",name:"黄瓜", em:"🥒"},
+  {id:"eggplant",name:"茄子", em:"🍆"},
+  {id:"potato", name:"土豆",  em:"🥔"},
+  {id:"fungus", name:"木耳",  em:"🍄"},
+  {id:"scallion",name:"葱",   em:"🌿"},
+  {id:"cilantro",name:"香菜", em:"🌾"}
+];
+
+const AVOID = [
+  {id:"onion",   label:"不吃洋葱"},
+  {id:"cilantro",label:"不吃香菜"},
+  {id:"spicy",   label:"不吃辣"},
+  {id:"seafood", label:"海鲜过敏"},
+  {id:"peanut",  label:"花生过敏"},
+  {id:"eggplant",label:"不吃茄子"},
+  {id:"garlic",  label:"不吃蒜"}
+];
+
+const RECIPES = [
+  {name:"番茄炒蛋", emoji:"🍳", have:["tomato","egg"], miss:["scallion"], tags:["egg","tomato"], avoid:[]},
+  {name:"洋葱炒牛肉", emoji:"🥩", have:["beef","onion"], miss:[], tags:["beef","onion"], avoid:["onion"]},
+  {name:"香菜拌牛肉", emoji:"🥗", have:["beef","cilantro"], miss:[], tags:["beef","cilantro"], avoid:["cilantro"]},
+  {name:"麻婆豆腐", emoji:"🌶️", have:["pork","fungus"], miss:["豆腐","辣椒","花椒"], tags:["pork","fungus"], avoid:["spicy"]},
+  {name:"清蒸鱼", emoji:"🐟", have:["fish","scallion"], miss:["姜","酱油"], tags:["fish","scallion"], avoid:["seafood"]},
+  {name:"宫保鸡丁", emoji:"🍗", have:["chicken","peanut"], miss:["辣椒","黄瓜"], tags:["chicken","peanut"], avoid:["spicy","peanut"]},
+  {name:"蒜蓉西兰花", emoji:"🥦", have:["broccoli","garlic"], miss:[], tags:["broccoli","garlic"], avoid:["garlic"]},
+  {name:"红烧排骨", emoji:"🍖", have:["scallion","carrot"], miss:["排骨","姜","酱油"], tags:["scallion","carrot"], avoid:[]},
+  {name:"鱼香肉丝", emoji:"🥢", have:["pork","carrot","fungus"], miss:["辣椒","蒜"], tags:["pork","carrot","fungus"], avoid:["spicy"]},
+  {name:"凉拌黄瓜", emoji:"🥒", have:["cucumber","garlic"], miss:["醋"], tags:["cucumber","garlic"], avoid:["garlic"]},
+  {name:"虾仁炒蛋", emoji:"🦐", have:["shrimp","egg"], miss:[], tags:["shrimp","egg"], avoid:["seafood"]},
+  {name:"地三鲜", emoji:"🍆", have:["eggplant","potato","carrot"], miss:["青椒"], tags:["eggplant","potato","carrot"], avoid:["eggplant"]},
+  {name:"葱油拌面", emoji:"🍜", have:["scallion"], miss:["面条","酱油"], tags:["scallion"], avoid:[]},
+  {name:"番茄牛腩", emoji:"🍅", have:["beef","tomato","onion"], miss:["姜"], tags:["beef","tomato","onion"], avoid:["onion"]},
+  {name:"香菇油菜", emoji:"🍄", have:["garlic"], miss:["香菇","油菜"], tags:["garlic"], avoid:["garlic"]}
+];
+
+const AVOID_RULES = {
+  onion:["onion"], cilantro:["cilantro"], spicy:["spicy"], peanut:["peanut"],
+  eggplant:["eggplant"], garlic:["garlic"], seafood:["shrimp","fish"]
+};
+
+const ISSUES = [
+  {id:"tone",     mud:"说话语气太重了",   clean:"当时有点急"},
+  {id:"noreply",  mud:"消息半天不回",     clean:"在忙别的事"},
+  {id:"chore",    mud:"家务一点都不做",   clean:"没注意到该做了"},
+  {id:"forget",   mud:"答应的事又忘了",   clean:"记岔了"},
+  {id:"money",    mud:"花钱不跟我商量",   clean:"以为不用先说"},
+  {id:"boundary", mud:"和异性没边界感",   clean:"没意识到你会介意"},
+  {id:"compare",  mud:"老拿别人跟我比",   clean:"想表达对你的期待"},
+  {id:"promise",  mud:"说好做到又没做到", clean:"高估了自己精力"},
+  {id:"cold",     mud:"冷暴力不理人",     clean:"不知道怎么开口"},
+  {id:"joke",     mud:"玩笑开过头了",     clean:"没考虑到你感受"}
+];
+
+const SEASONINGS = [
+  {id:"apologize", em:"🙏", name:"认个错"},
+  {id:"explain",   em:"💬", name:"说清楚"},
+  {id:"yield",     em:"🕊️", name:"让一步"},
+  {id:"agree",     em:"📌", name:"约定下次"},
+  {id:"hug",       em:"🤗", name:"抱一下"},
+  {id:"listen",    em:"👂", name:"先听完"}
+];
+
+const RC_STEPS = ["生鲜区 · 抖泥", "调料区 · 调味", "收银台 · 结账"];
+
+const state = {
+  view:"me",
+  me:{avoid:new Set()},
+  ta:{avoid:new Set()},
+  cart:{},
+  reconcile:{step:0, who:"me", picked:{me:new Set(), ta:new Set()}, cleaned:{me:new Set(), ta:new Set()}, seasoned:{}}
+};
+
+function $(s){return document.querySelector(s)}
+function el(t,c,h){const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e}
+
+function blockedBy(id, who){
+  // returns set of avoid-ids that block this product for this person
+  const res=[];
+  who.avoid.forEach(a=>{
+    (AVOID_RULES[a]||[]).forEach(pid=>{ if(pid===id) res.push(a); });
+  });
+  return res;
+}
+
+function render(){
+  const app=$("#app"); app.innerHTML="";
+  if(state.view==="reconcile"){
+    renderReconcile(app);
+  } else if(state.view==="me"||state.view==="ta"){
+    renderPrefs(app, state.view);
+  } else {
+    renderShop(app);
+  }
+  syncFooter();
+}
+
+function renderPrefs(app, who){
+  const p=state[who];
+  const whoLbl = who==="me"?"我":"Ta";
+  app.appendChild(el("h2","",`${whoLbl}的忌口`));
+  app.appendChild(el("div","hint","勾选对方不碰的——菜谱会自动避开，谁都不用迁就。"));
+  const wrap=el("div","prefs");
+  AVOID.forEach(a=>{
+    const on=p.avoid.has(a.id);
+    const c=el("div","pref"+(on?" on":""));
+    c.appendChild(el("span","dot"));
+    c.appendChild(el("span","",a.label));
+    c.onclick=()=>{
+      if(p.avoid.has(a.id)) p.avoid.delete(a.id); else p.avoid.add(a.id);
+      render();
+    };
+    wrap.appendChild(c);
+  });
+  app.appendChild(wrap);
+
+  const both=state.me.avoid.size + state.ta.avoid.size;
+  app.appendChild(el("h2","","默契度"));
+  app.appendChild(el("div","hint","忌口重合越多，口味越合拍。"));
+  const inter=[...state.me.avoid].filter(x=>state.ta.avoid.has(x)).length;
+  const union=both - inter || 1;
+  const score=Math.round(inter/union*100);
+  const m=el("div");
+  m.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:12px;color:var(--soft)"><span>口味契合</span><b style="color:var(--brand)">${score}%</b></div>`;
+  m.appendChild(el("div","meter",`<i style="width:${score}%"></i>`));
+  app.appendChild(m);
+}
+
+function renderShop(app){
+  app.appendChild(el("h2","","扫一扫 / 选购"));
+  app.appendChild(el("div","hint","点击把货架上的食材丢进购物车。被任一方忌口的会标红提示。"));
+  const grid=el("div","grid");
+  PRODUCTS.forEach(p=>{
+    const meBlk=blockedBy(p.id,state.me);
+    const taBlk=blockedBy(p.id,state.ta);
+    const blocked = meBlk.length || taBlk.length;
+    const c=el("div","item"+(state.cart[p.id]?" in":"")+(blocked?" blocked":""));
+    c.appendChild(el("div","em",p.em));
+    c.appendChild(el("div","nm",p.name));
+    c.appendChild(el("div","cnt",String(state.cart[p.id]||0)));
+    if(blocked){
+      const who=(meBlk.length?"我":"")+(taBlk.length?"Ta":"");
+      c.appendChild(el("div","blk",`${who}忌口`));
+    }
+    c.onclick=()=>{
+      state.cart[p.id]=(state.cart[p.id]||0)+1;
+      render();
+    };
+    grid.appendChild(c);
+  });
+  app.appendChild(grid);
+
+  app.appendChild(el("h2","","实时菜谱"));
+  const recs=matchRecipes();
+  if(!recs.length){
+    app.appendChild(el("div","empty","购物车还空着，先丢点食材进去吧。"));
+    return;
+  }
+  recs.slice(0,5).forEach((r,i)=>{
+    const card=el("div","rec"+(i===0?" top":""));
+    if(i===0) card.appendChild(el("div","badge","最佳匹配"));
+    card.appendChild(el("div","name",`${r.recipe.emoji} ${r.recipe.name}`));
+    card.appendChild(el("div","meta",`已选 ${r.haveCount} · 还差 ${r.recipe.miss.length?r.recipe.miss.join("、"):"齐了"}`));
+    const haveTxt=r.haveList.length?r.haveList.join("、"):"—";
+    card.appendChild(el("div","have",`已有：${haveTxt}`));
+    if(r.recipe.miss.length) card.appendChild(el("div","miss",`待买：${r.recipe.miss.join("、")}`));
+    if(r.recipe.avoid.length){
+      const blockers=[];
+      ["me","ta"].forEach(w=>{
+        r.recipe.avoid.forEach(a=>{
+          if(state[w].avoid.has(a)) blockers.push((w==="me"?"我":"Ta")+"忌"+(AVOID.find(x=>x.id===a)?.label||a));
+        });
+      });
+      card.appendChild(el("div","why",`⚠ ${blockers.join("、")} · 已自动从推荐排除`));
+    }
+    app.appendChild(card);
+  });
+}
+
+function cleanItems(){
+  const rc=state.reconcile, out=[];
+  ["me","ta"].forEach(w=>{
+    rc.cleaned[w].forEach(id=>{
+      const issue=ISSUES.find(x=>x.id===id);
+      if(!issue) return;
+      out.push({who:w, id, issue, seasoning:rc.seasoned[`${w}:${id}`]||null});
+    });
+  });
+  return out;
+}
+
+function renderReconcile(app){
+  const rc=state.reconcile;
+  const st=el("div","stepper");
+  RC_STEPS.forEach((label,i)=>{
+    const cls=i<rc.step?" done": i===rc.step?" on":"";
+    const s=el("div","step"+cls);
+    s.innerHTML=`<span class="n">${i<rc.step?"✓":i+1}</span>${label}`;
+    s.onclick=()=>{ if(i<rc.step){ rc.step=i; render(); } };
+    st.appendChild(s);
+  });
+  app.appendChild(st);
+
+  if(rc.step===0){
+    const sub=el("div","subtabs");
+    [["me","我挑的别扭"],["ta","Ta挑的别扭"]].forEach(([k,lbl])=>{
+      const c=el("div","subtab"+(rc.who===k?" active":""));
+      c.textContent=lbl;
+      c.onclick=()=>{ rc.who=k; render(); };
+      sub.appendChild(c);
+    });
+    app.appendChild(sub);
+    app.appendChild(el("div","hint","像挑菜一样把刚才的别扭捡进筐，再点「抖泥」把情绪抖掉，剩下干净的事实——先各自盛出冷静，再炒番茄说事实。"));
+    ISSUES.forEach(it=>{
+      const picked=rc.picked[rc.who].has(it.id);
+      const cleaned=rc.cleaned[rc.who].has(it.id);
+      const c=el("div","conflict");
+      const top=el("div","top");
+      if(cleaned){
+        top.appendChild(el("span","clean",`${rc.who==="me"?"我":"Ta"}：${it.clean}`));
+        top.appendChild(el("span","pick","净菜 ✓"));
+      } else if(picked){
+        top.appendChild(el("span","mud",it.mud));
+        const b=el("button","btn-mini","抖泥");
+        b.onclick=()=>{ rc.cleaned[rc.who].add(it.id); render(); };
+        top.appendChild(b);
+      } else {
+        top.appendChild(el("span","dim",it.mud));
+        const b=el("button","btn-mini","捡进筐");
+        b.onclick=()=>{ rc.picked[rc.who].add(it.id); render(); };
+        top.appendChild(b);
+      }
+      c.appendChild(top);
+      app.appendChild(c);
+    });
+  } else if(rc.step===1){
+    app.appendChild(el("div","hint","两个人把净菜放一起，每件挑一种调料——认错、说清楚、让一步……调齐了就出锅。"));
+    const items=cleanItems();
+    if(!items.length){
+      app.appendChild(el("div","empty","净菜筐空着，先回生鲜区捡几样别扭、抖掉泥。"));
+    } else {
+      items.forEach(ci=>{
+        const key=`${ci.who}:${ci.id}`;
+        const c=el("div","conflict");
+        c.appendChild(el("div","top",`<span class="clean">${ci.who==="me"?"我":"Ta"}：${ci.issue.clean}</span>`));
+        const row=el("div","season");
+        SEASONINGS.forEach(s=>{
+          const on=ci.seasoning===s.id;
+          const b=el("button","btn-mini"+(on?" on":""), `${s.em} ${s.name}`);
+          b.onclick=()=>{ if(on) delete rc.seasoned[key]; else rc.seasoned[key]=s.id; render(); };
+          row.appendChild(b);
+        });
+        c.appendChild(row);
+        app.appendChild(c);
+      });
+    }
+  } else {
+    const items=cleanItems();
+    const seasoned=items.filter(ci=>ci.seasoning).length;
+    const ok=items.length>0 && seasoned===items.length;
+    app.appendChild(el("div","hint","走到收银台，筐里的东西已经变成今晚的番茄炒蛋。"));
+    const card=el("div","rec top");
+    card.appendChild(el("div","badge", ok?"没糊锅":"还没调齐"));
+    card.appendChild(el("div","name","🍅 番茄炒蛋"));
+    card.appendChild(el("div","meta",`净菜 ${items.length} · 调料 ${seasoned}/${items.length||0}`));
+    if(items.length){
+      items.forEach(ci=>{
+        const s=ci.seasoning?SEASONINGS.find(x=>x.id===ci.seasoning):null;
+        const line=el("div","have", `${ci.who==="me"?"我":"Ta"}：${ci.issue.clean}` + (s?` → ${s.em} ${s.name}`:" → 待调味"));
+        card.appendChild(line);
+      });
+    } else {
+      card.appendChild(el("div","have","（空筐——什么都没放进锅里）"));
+    }
+    if(ok) card.appendChild(el("div","why","先各自盛出冷静，再炒番茄说事实，最后混到一起商量——所以没糊锅。"));
+    app.appendChild(card);
+  }
+}
+
+function reconcileNext(){
+  const rc=state.reconcile;
+  const items=cleanItems();
+  const seasoned=items.filter(ci=>ci.seasoning).length;
+  if(rc.step===0){
+    if(items.length===0){ showToast("先捡几样别扭、抖掉泥吧"); return; }
+    rc.step=1; render();
+  } else if(rc.step===1){
+    if(items.length===0 || seasoned!==items.length){ showToast("每件净菜都挑一种调料再出锅"); return; }
+    rc.step=2; render();
+  } else {
+    const ok=items.length>0 && seasoned===items.length;
+    if(!ok){ rc.step=1; render(); return; }
+    showToast(`<b>没糊锅，开吃</b><br><span style="opacity:.85">今晚的番茄炒蛋，做好了 🍅🥚</span>`,"🤝");
+  }
+}
+
+function matchRecipes(){
+  const cartIds=Object.keys(state.cart);
+  // union of both people's avoid
+  const unionAvoid=new Set([...state.me.avoid, ...state.ta.avoid]);
+  const list=RECIPES.map(r=>{
+    // is this recipe acceptable? none of its avoid-tags in unionAvoid
+    const blocked = r.avoid.some(a=>unionAvoid.has(a));
+    const haveList = r.have.filter(id=>state.cart[id]);
+    const haveCount = haveList.length;
+    return {recipe:r, blocked, haveList, haveCount, score:haveCount - (blocked?-5:0)};
+  })
+  // show acceptable first, then blocked (as transparency)
+  .sort((a,b)=> (a.blocked===b.blocked? b.score-a.score : (a.blocked?1:-1)));
+  return list;
+}
+
+function topMatch(){
+  const unionAvoid=new Set([...state.me.avoid, ...state.ta.avoid]);
+  const cartIds=Object.keys(state.cart);
+  const acceptable = RECIPES.filter(r=>!r.avoid.some(a=>unionAvoid.has(a)));
+  if(!cartIds.length) return {ok:false, msg:"先把食材丢进购物车吧～"};
+  if(!acceptable.length) return {ok:false, msg:"俩人忌口加起来把菜谱全军覆没了，各自让一步试试？"};
+  // rank by how many cart items used
+  let best=null;
+  acceptable.forEach(r=>{
+    const have=r.have.filter(id=>state.cart[id]);
+    const score=have.length;
+    if(!best||score>best.score) best={r,score,have};
+  });
+  if(best.score===0) return {ok:false,msg:"购物车里的食材暂时凑不上完整菜谱，再扫几样？"};
+  return {ok:true, recipe:best.r, have:best.have};
+}
+
+function showToast(html, big){
+  const t=$("#toast"); t.innerHTML=(big?`<div class="big">${big}</div>`:"")+html;
+  t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),3200);
+}
+
+$("#matchBtn").onclick=()=>{
+  if(state.view==="reconcile"){ reconcileNext(); return; }
+  const m=topMatch();
+  if(!m.ok){ showToast(m.msg); return; }
+  const unionAvoid=new Set([...state.me.avoid, ...state.ta.avoid]);
+  const safe = !m.recipe.avoid.some(a=>unionAvoid.has(a)); // guaranteed true here
+  const bothOk = "两人都能吃";
+  showToast(`<b>${m.recipe.name}</b><br><span style="opacity:.8">${bothOk}，不用再吵了 🤝</span>`, m.recipe.emoji);
+};
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    state.view=t.dataset.p;
+    render();
+  };
+});
+
+function syncFooter(){
+  if(state.view==="reconcile"){
+    const rc=state.reconcile;
+    const items=cleanItems();
+    const seasoned=items.filter(ci=>ci.seasoning).length;
+    const btn=$("#matchBtn");
+    if(rc.step===0){
+      $("#cartCount").textContent=items.length;
+      $("#prefSummary").textContent=`净菜 ${items.length}`;
+      btn.textContent="去调料区 →";
+      btn.disabled=items.length===0;
+    } else if(rc.step===1){
+      $("#cartCount").textContent=seasoned;
+      $("#prefSummary").textContent=`已调味 ${seasoned}/${items.length}`;
+      btn.textContent="去收银台 →";
+      btn.disabled=items.length===0 || seasoned!==items.length;
+    } else {
+      const ok=items.length>0 && seasoned===items.length;
+      $("#cartCount").textContent=items.length;
+      $("#prefSummary").textContent= ok?"没糊锅":"还在糊";
+      btn.textContent= ok?"和好 🍅":"← 回去补齐";
+      btn.disabled=false;
+    }
+    return;
+  }
+  const n=Object.values(state.cart).reduce((a,b)=>a+b,0);
+  $("#cartCount").textContent=n;
+  const a=state.me.avoid, b=state.ta.avoid;
+  const both=a.size+b.size;
+  $("#prefSummary").textContent = both?`我${a.size}/Ta${b.size}忌口`:"无忌口";
+  $("#matchBtn").disabled = n===0;
+}
+
+render();
+</script>
+</body>
+</html>

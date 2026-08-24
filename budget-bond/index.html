@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>100块默契挑战 · 钱钱钱也能变有趣</title>
+<style>
+  :root{
+    --bg:#fbf6ee; --card:#ffffff; --ink:#2b2420; --soft:#8a7d72;
+    --brand:#e8623c; --brand2:#f0a83a; --ok:#3fa66a; --no:#d2503f;
+    --line:#efe6da; --chip:#f6ede1;
+    --ta:#7a5cb0;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(180deg,#fdf8ef,#f6ecdd); color:var(--ink);
+    min-height:100dvh; max-width:480px; margin:0 auto; padding:0 0 120px;
+    line-height:1.55;
+  }
+  header{
+    position:sticky; top:0; z-index:10; background:rgba(251,246,238,.92);
+    backdrop-filter:blur(8px); padding:14px 16px 10px; border-bottom:1px solid var(--line);
+  }
+  header .row{display:flex; align-items:center; justify-content:space-between}
+  header h1{font-size:18px; margin:0; font-weight:800; letter-spacing:.5px}
+  header .sub{font-size:12px; color:var(--soft); margin-top:2px}
+  .bag-bubble{
+    font-size:12px; font-weight:700; color:#fff; background:var(--brand);
+    padding:3px 9px; border-radius:20px;
+  }
+  main{padding:14px 16px}
+
+  /* 预算条 */
+  .budget{
+    position:sticky; top:60px; z-index:9; background:rgba(251,246,238,.94);
+    backdrop-filter:blur(6px); border:1px solid var(--line); border-radius:14px;
+    padding:10px 12px; margin-bottom:14px;
+  }
+  .budget .top{display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--soft)}
+  .budget .amt{font-size:22px; font-weight:800; color:var(--ink); letter-spacing:.5px}
+  .budget .amt.over{color:var(--no)}
+  .bar{height:7px; background:#efe2d2; border-radius:99px; margin-top:8px; overflow:hidden}
+  .bar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--brand),var(--brand2)); transition:width .18s}
+  .bar > i.over{background:var(--no)}
+
+  /* tabs */
+  .tabs{display:flex; gap:6px; margin-bottom:12px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{
+    flex:0 0 auto; padding:8px 13px; text-align:center; font-size:13px; font-weight:600;
+    border:1px solid var(--line); border-radius:20px; background:var(--card); color:var(--soft); white-space:nowrap;
+  }
+  .tab.active{background:var(--ink); color:#fff; border-color:var(--ink)}
+
+  /* 商品网格 */
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+  .item{
+    border:1px solid var(--line); background:var(--card); border-radius:14px;
+    padding:12px 6px 9px; text-align:center; position:relative; cursor:pointer;
+    transition:transform .08s, border-color .12s, background .12s;
+  }
+  .item:active{transform:scale(.95)}
+  .item.in-bag{border-color:var(--brand); background:#fdeeec}
+  .item .em{font-size:30px; line-height:1}
+  .item .nm{font-size:12px; margin-top:6px; color:var(--ink)}
+  .item .pr{font-size:11px; color:var(--soft); margin-top:2px}
+  .item .tag{
+    position:absolute; top:-7px; right:-7px; width:22px; height:22px; border-radius:50%;
+    background:var(--brand); color:#fff; font-size:11px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,.15)
+  }
+  /* 心：猜TA会给你挑这个 */
+  .item .heart{
+    position:absolute; top:6px; left:6px; width:24px; height:24px; border-radius:50%;
+    background:#fff; border:1px solid var(--line); font-size:13px; display:flex; align-items:center; justify-content:center;
+    color:#c9b9ab;
+  }
+  .item .heart.on{background:#ffe2ec; border-color:#f7a8c0; color:#e64980}
+  .item.is-guess{border-color:#f7a8c0; background:#fff5f9}
+
+  .hint{font-size:12px; color:var(--soft); margin:-2px 0 12px; line-height:1.6}
+  .hint b{color:var(--brand); font-weight:700}
+  .hint i{color:var(--ta); font-style:normal; font-weight:700}
+
+  /* 底部固定栏 */
+  footer{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:480px;
+    background:rgba(251,246,238,.96); backdrop-filter:blur(8px); border-top:1px solid var(--line);
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom)); display:flex; gap:10px; z-index:11;
+  }
+  .btn{
+    flex:1; border:none; border-radius:14px; padding:14px 0; font-size:15px; font-weight:800;
+    background:var(--ink); color:#fff; cursor:pointer; transition:transform .08s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:var(--card); color:var(--ink); border:1px solid var(--line); flex:0 0 96px}
+  .btn[disabled]{opacity:.45}
+
+  /* 开场 / 结算 全屏卡片 */
+  .stage{display:none}
+  .stage.on{display:block}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:18px; padding:22px 18px;
+    box-shadow:0 6px 24px rgba(80,60,40,.06);
+  }
+  .quote{
+    font-size:14px; color:var(--soft); border-left:3px solid var(--brand); padding:3px 0 3px 11px;
+    margin:0 0 16px; line-height:1.7;
+  }
+  .quote .by{display:block; font-size:11px; color:#b3a596; margin-top:4px}
+  .rules{font-size:14px; color:var(--ink); line-height:1.85}
+  .rules li{margin-bottom:6px}
+  .rules b{color:var(--brand)}
+  .sub-title{font-size:13px; font-weight:800; color:var(--ink); margin:18px 0 8px}
+  .pill{display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; background:var(--chip); color:var(--soft); margin-right:6px}
+
+  .verdict{margin-top:6px}
+  .score{
+    display:flex; align-items:center; gap:14px; margin:10px 0 6px;
+  }
+  .score .num{font-size:40px; font-weight:900; color:var(--brand); line-height:1; letter-spacing:1px}
+  .score .num.mid{color:var(--brand2)}
+  .score .num.lo{color:var(--no)}
+  .score .lab{font-size:13px; color:var(--soft); max-width:180px; line-height:1.4}
+  .tag-line{font-size:15px; font-weight:800; color:var(--ink); margin:10px 0 4px}
+  .desc{font-size:13px; color:var(--soft); line-height:1.7}
+  .pairs{margin-top:12px}
+  .pair{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:12px; background:var(--chip); margin-bottom:8px}
+  .pair .e{font-size:22px}
+  .pair .t{font-size:13px; color:var(--ink)}
+  .pair .t small{color:var(--soft); display:block; font-size:11px}
+  .pair .mark{margin-left:auto; font-size:11px; font-weight:800; padding:3px 8px; border-radius:20px}
+  .pair .mark.hit{background:#e3f4e9; color:var(--ok)}
+  .pair .mark.miss{background:#fdeeec; color:var(--no)}
+  .sausage{margin-top:18px; text-align:center; padding:16px; border-radius:16px; background:linear-gradient(180deg,#fff3df,#fde7c8)}
+  .sausage .em{font-size:40px}
+  .sausage .t{font-size:14px; font-weight:800; color:var(--ink); margin-top:6px}
+  .sausage .s{font-size:12px; color:var(--soft); margin-top:3px}
+  .meta-line{font-size:11px; color:#b3a596; text-align:center; margin-top:18px}
+  .ghost-btn{display:block; width:100%; margin-top:18px; padding:13px; border:1px dashed var(--line); background:transparent; border-radius:14px; font-size:14px; color:var(--soft); cursor:pointer}
+  .ghost-btn:active{background:var(--chip)}
+</style>
+</head>
+<body>
+<header>
+  <div class="row">
+    <div>
+      <h1>100块默契挑战</h1>
+      <div class="sub">钱钱钱，也能变有趣</div>
+    </div>
+    <span class="bag-bubble" id="bagBubble">0 · ¥0</span>
+  </div>
+</header>
+
+<main>
+  <!-- 开场 -->
+  <section class="stage on" id="stageIntro">
+    <div class="card">
+      <p class="quote">
+        人长大了就是钱钱钱。
+        <span class="by">—— 赵雪峰</span>
+      </p>
+      <p class="desc" style="margin:0 0 4px">那就让钱变有趣一点。</p>
+      <p class="sub-title">玩法</p>
+      <ul class="rules">
+        <li>你和小鹿各带 <b>100 块</b> 进超市。</li>
+        <li>你给 <i>TA</i> 挑东西装满袋子（花你的100块），看你是不是<b>会过日子的人</b>。</li>
+        <li>再猜一件：<i>TA</i> 会给你挑哪样？猜对了，叫<b>默契</b>。</li>
+        <li>花完钱，剩的够不够买根 <b>烤肠</b>？</li>
+      </ul>
+      <p class="desc" style="margin-top:14px">谁挑的更像"能过日子的人"，谁就赢。赵雪峰那句"钱钱钱"，突然就有点意思了。</p>
+    </div>
+    <footer>
+      <button class="btn" id="goShop">进超市 →</button>
+    </footer>
+  </section>
+
+  <!-- 超市货架 -->
+  <section class="stage" id="stageShop">
+    <div class="budget" id="budget">
+      <div class="top">
+        <span>你的预算</span>
+        <span><b class="amt" id="amtLeft">¥100</b> 剩</span>
+      </div>
+      <div class="bar"><i id="barFill"></i></div>
+      <div class="top" style="margin-top:7px">
+        <span>给 TA 的袋子 <b id="bagCount" style="color:var(--brand)">0</b> 件</span>
+        <span style="color:var(--ta)">猜 TA 给你挑：点 <b>♡</b></span>
+      </div>
+    </div>
+
+    <p class="hint">
+      点商品 → 给 <b>TA</b> 挑（袋子里别超 100 块）；点左上角 <i>♡</i> → 猜这件是 <i>TA</i> 会给你挑的（只能选 1 件）。
+    </p>
+
+    <div class="tabs" id="tabs"></div>
+    <div class="grid" id="grid"></div>
+
+    <footer>
+      <button class="btn ghost" id="clearBag">清空</button>
+      <button class="btn" id="checkout">结算 →</button>
+    </footer>
+  </section>
+
+  <!-- 结算 -->
+  <section class="stage" id="stageResult">
+    <div class="card">
+      <p class="pill" id="taPill">TA 是</p>
+      <p class="desc" id="taDesc"></p>
+
+      <p class="sub-title">默契分 · 你猜 TA 会给你挑</p>
+      <div class="verdict">
+        <div class="score">
+          <span class="num" id="syncNum">0</span>
+          <span class="lab" id="syncLab">…</span>
+        </div>
+        <div class="pairs" id="syncPairs"></div>
+      </div>
+
+      <p class="sub-title">日子人评级 · 你给 TA 挑的</p>
+      <div class="verdict">
+        <div class="score">
+          <span class="num" id="lifeNum">0</span>
+          <span class="lab" id="lifeLab">…</span>
+        </div>
+        <p class="tag-line" id="lifeTag">…</p>
+        <p class="desc" id="lifeDesc">…</p>
+        <div class="pairs" id="lifePairs"></div>
+      </div>
+
+      <div class="sausage" id="sausage">
+        <div class="em" id="sEm">🌭</div>
+        <div class="t" id="sTitle">…</div>
+        <div class="s" id="sSub">…</div>
+      </div>
+
+      <p class="meta-line" id="metaLine"></p>
+      <button class="ghost-btn" id="again">再来一局（换个 TA）</button>
+    </div>
+    <footer>
+      <button class="btn" id="backShop">← 回超市改改</button>
+      <button class="btn ghost" id="restart">重新开始</button>
+    </footer>
+  </section>
+</main>
+
+<script>
+const BUDGET = 100;
+const SAUSAGE = 3; // 烤肠价
+
+// 货架：6 区
+const ZONES = [
+  {id:"grain", name:"粮油主食", items:[
+    {id:"rice", em:"🍚", nm:"大米5kg", price:38, cat:"粮"},
+    {id:"oil",  em:"🛢️", nm:"食用油",   price:32, cat:"油"},
+    {id:"noodle", em:"🍜", nm:"挂面",   price:6,  cat:"粮"},
+    {id:"dumpling", em:"🥟", nm:"速冻饺子", price:18, cat:"粮"},
+  ]},
+  {id:"veg", name:"果蔬蛋", items:[
+    {id:"egg",   em:"🥚", nm:"鸡蛋10个", price:12, cat:"菜"},
+    {id:"veg",   em:"🥬", nm:"青菜",     price:4,  cat:"菜"},
+    {id:"toma",  em:"🍅", nm:"番茄",     price:6,  cat:"菜"},
+    {id:"apple", em:"🍎", nm:"苹果",     price:9,  cat:"果"},
+    {id:"banana",em:"🍌", nm:"香蕉",     price:7,  cat:"果"},
+  ]},
+  {id:"snack", name:"零嘴饮料", items:[
+    {id:"chips", em:"🍟", nm:"薯片",   price:8,  cat:"零"},
+    {id:"cola",  em:"🥤", nm:"可乐",   price:5,  cat:"零"},
+    {id:"choc",  em:"🍫", nm:"巧克力", price:12, cat:"零"},
+    {id:"spicy", em:"🌶️", nm:"辣条",  price:4,  cat:"零"},
+  ]},
+  {id:"daily", name:"日用杂货", items:[
+    {id:"tissue", em:"🧻", nm:"抽纸",   price:16, cat:"用"},
+    {id:"soap",   em:"🧴", nm:"洗洁精", price:9,  cat:"用"},
+    {id:"tooth",  em:"🪥", nm:"牙膏",   price:13, cat:"用"},
+    {id:"bag",    em:"🗑️", nm:"垃圾袋", price:6,  cat:"用"},
+  ]},
+  {id:"cold", name:"冷鲜", items:[
+    {id:"milk",  em:"🥛", nm:"牛奶",   price:15, cat:"菜"},
+    {id:"yogurt",em:"🍮", nm:"酸奶",   price:8,  cat:"菜"},
+    {id:"tofu",  em:"⚪", nm:"豆腐",   price:4,  cat:"菜"},
+    {id:"chicken",em:"🍗", nm:"鸡腿",  price:14, cat:"菜"},
+  ]},
+  {id:"sausage", name:"烤肠摊", items:[
+    {id:"saus1", em:"🌭", nm:"原味烤肠", price:3, cat:"烤"},
+    {id:"saus2", em:"🌭", nm:"芝士烤肠", price:5, cat:"烤"},
+    {id:"saus3", em:"🌭", nm:"火山石烤肠", price:4, cat:"烤"},
+  ]},
+];
+const ALL = ZONES.flatMap(z=>z.items.map(it=>({...it, zone:z.id})));
+const byId = id => ALL.find(x=>x.id===id);
+
+// TA 的人格：每种有自己的"会给玩家挑"池 和 "真实想要"池
+const PERSONAS = [
+  {
+    name:"务实妈妈型", em:"👩", tag:"实在",
+    desc:"她的袋子永远有米有油有抽纸。买给别人的，也准是过日子用得上的。",
+    givePool:["egg","milk","tissue","tofu"],   // 她会给玩家挑的商品池
+    wantPool:["rice","oil","veg","tissue"],
+  },
+  {
+    name:"享受派", em:"🧉", tag:"快活",
+    desc:"钱嘛，赚来就是花的。她进超市直奔零食饮料区。",
+    givePool:["choc","cola","chips","saus2"],
+    wantPool:["choc","cola","chips"],
+  },
+  {
+    name:"精算师", em:"🧮", tag:"精打细算",
+    desc:"每件商品的单价她都背得下来。给的东西实惠、便宜、绝不浪费。",
+    givePool:["noodle","tofu","veg","bag"],
+    wantPool:["noodle","tofu","egg"],
+  },
+  {
+    name:"浪漫系", em:"🌸", tag:"感性",
+    desc:"她买东西看心情。给你挑的，多半是甜的、圆的、有仪式感的。",
+    givePool:["choc","apple","saus1","yogurt"],
+    wantPool:["choc","apple","yogurt"],
+  },
+];
+
+// 状态
+let bag = {};        // id -> count 给 TA 挑的
+let guessId = null;  // 猜 TA 会给你挑的
+let curZone = ZONES[0].id;
+let ta = null;       // 当前 TA 人格
+
+function pickTA(){
+  const p = PERSONAS[Math.floor(Math.random()*PERSONAS.length)];
+  const give = p.givePool[Math.floor(Math.random()*p.givePool.length)];
+  return {...p, giveId:give};
+}
+
+// 渲染 tabs + grid
+function renderTabs(){
+  const el = document.getElementById("tabs");
+  el.innerHTML = ZONES.map(z=>
+    `<div class="tab ${z.id===curZone?'active':''}" data-z="${z.id}">${z.name}</div>`
+  ).join("");
+  el.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+    curZone = t.dataset.z; renderTabs(); renderGrid();
+  });
+}
+function renderGrid(){
+  const z = ZONES.find(x=>x.id===curZone);
+  document.getElementById("grid").innerHTML = z.items.map(it=>{
+    const inBag = bag[it.id]||0;
+    const isG = guessId===it.id;
+    return `<div class="item ${inBag?'in-bag':''} ${isG?'is-guess':''}" data-id="${it.id}">
+      ${inBag?`<span class="tag">${inBag}</span>`:''}
+      <span class="heart ${isG?'on':''}">♡</span>
+      <div class="em">${it.em}</div>
+      <div class="nm">${it.nm}</div>
+      <div class="pr">¥${it.price}</div>
+    </div>`;
+  }).join("");
+  bindItems();
+}
+function bindItems(){
+  document.querySelectorAll("#grid .item").forEach(node=>{
+    const id = node.dataset.id;
+    const heart = node.querySelector(".heart");
+    // 心：猜 TA 给你挑（单选）
+    heart.onclick=(e)=>{
+      e.stopPropagation();
+      guessId = (guessId===id)?null:id;
+      renderGrid();
+    };
+    // 主体点击：加入袋子
+    node.onclick=()=>{
+      const it = byId(id);
+      const used = bagTotal();
+      if(used + it.price > BUDGET){
+        flashOver();
+        return;
+      }
+      bag[id] = (bag[id]||0)+1;
+      renderGrid(); syncBudget();
+    };
+    // 长按：减一件
+    let pressT;
+    node.addEventListener("touchstart",()=>{pressT=setTimeout(()=>{if(bag[id]){bag[id]--;if(!bag[id])delete bag[id];renderGrid();syncBudget();}},450)},{passive:true});
+    node.addEventListener("touchend",()=>clearTimeout(pressT));
+    node.addEventListener("touchmove",()=>clearTimeout(pressT),{passive:true});
+  });
+}
+function bagTotal(){return Object.entries(bag).reduce((s,[id,n])=>s+byId(id).price*n,0);}
+function bagCount(){return Object.values(bag).reduce((s,n)=>s+n,0);}
+function syncBudget(){
+  const used = bagTotal();
+  const left = BUDGET - used;
+  const amt = document.getElementById("amtLeft");
+  const fill = document.getElementById("barFill");
+  amt.textContent = "¥"+left;
+  const over = left<0;
+  amt.classList.toggle("over",over);
+  fill.style.width = Math.min(100, used/BUDGET*100)+"%";
+  fill.classList.toggle("over",over);
+  document.getElementById("bagCount").textContent = bagCount();
+  document.getElementById("bagBubble").textContent = `${bagCount()} · ¥${used}`;
+}
+function flashOver(){
+  const amt = document.getElementById("amtLeft");
+  amt.classList.add("over");
+  setTimeout(()=>amt.classList.toggle("over", (BUDGET-bagTotal())<0), 350);
+}
+
+// 切换 stage
+function show(id){
+  document.querySelectorAll(".stage").forEach(s=>s.classList.remove("on"));
+  document.getElementById(id).classList.add("on");
+  window.scrollTo({top:0,behavior:"instant"});
+}
+
+// 结算
+function checkout(){
+  if(!ta) ta = pickTA();
+  const used = bagTotal();
+  const left = BUDGET - used;
+
+  // 默契分
+  const myGuess = guessId?byId(guessId):null;
+  const taGive = byId(ta.giveId);
+  const hit = myGuess && myGuess.id===taGive.id;
+  // 差价越小越默契：100 - |差价|*8，命中+40
+  let sync = 0;
+  if(hit) sync = 100;
+  else if(myGuess) sync = Math.max(10, 100 - Math.abs(myGuess.price - taGive.price)*8 - 20);
+  sync = Math.round(sync);
+  document.getElementById("syncNum").textContent = sync;
+  document.getElementById("syncNum").className = "num "+(sync>=70?"":sync>=40?"mid":"lo");
+  document.getElementById("syncLab").textContent = hit
+    ? `猜对了！TA 给你挑的就是${taGive.em}${taGive.nm}`
+    : `你猜${myGuess?myGuess.em+myGuess.nm:"没猜"}，TA 其实给了你 ${taGive.em}${taGive.nm}`;
+  document.getElementById("syncPairs").innerHTML =
+    `<div class="pair"><span class="e">${taGive.em}</span>
+       <span class="t">TA 给你挑了<br><small>${taGive.nm} · ¥${taGive.price}</small></span>
+       <span class="mark ${hit?'hit':'miss'}">${hit?'命中':'没中'}</span></div>`;
+
+  // 日子人评级：看给 TA 挑的组合
+  const cats = {};
+  Object.entries(bag).forEach(([id,n])=>{const c=byId(id).cat; cats[c]=(cats[c]||0)+n;});
+  const kinds = Object.keys(cats);
+  const hasGrain = !!cats["粮"], hasOil=!!cats["油"], hasVeg=!!cats["菜"], hasUse=!!cats["用"], hasSnack=!!cats["零"];
+  let life = 0, tag="", desc="";
+  const balanced = [hasGrain,hasVeg,hasUse].filter(Boolean).length;
+  if(bagCount()===0){life=0;tag="空手套白狼";desc="你啥都没给人家买。赵雪峰说得对，钱钱钱——你是一点没沾。";}
+  else if(hasSnack && kinds.length===1){life=20;tag="你还是个孩子";desc="全是零嘴饮料。快乐是真快乐，但'能过日子'这四个字，暂时还跟你没关系。";}
+  else if(hasGrain&&hasOil&&hasVeg&&hasUse){life=92;tag="会过日子的人";desc="米油菜日用齐了。赵雪峰那句钱钱钱，在你这儿踏实成了烟火气。";}
+  else if(balanced>=2 && hasSnack){life=78;tag="七分烟火三分糖";desc="正经东西买了，也不忘带点甜的。这才是过日子的样子。";}
+  else if(balanced>=2){life=82;tag="懂生活的人";desc="粮油菜日用挑得均衡，是真心在给人家过日子。";}
+  else if(hasSnack && balanced===0){life=30;tag="排场人";desc="挑了一堆贵的零嘴，好看是好看，就是不太像能过日子的。";}
+  else if(left>40){life=45;tag="抠门人";desc="钱没花完，东西也没挑齐。省钱是省钱，就是少了点'过日子'的劲。";}
+  else{life=60;tag="凑合人";desc="挑是挑了，差那么点意思。日子嘛，凑合也能过。"}
+  document.getElementById("lifeNum").textContent=life;
+  document.getElementById("lifeNum").className="num "+(life>=80?"":life>=50?"mid":"lo");
+  document.getElementById("lifeLab").textContent = `给 TA 挑了 ${bagCount()} 件 / ¥${used}`;
+  document.getElementById("lifeTag").textContent = tag;
+  document.getElementById("lifeDesc").textContent = desc;
+  document.getElementById("lifePairs").innerHTML = Object.entries(bag).map(([id,n])=>{
+    const it=byId(id); return `<div class="pair"><span class="e">${it.em}</span>
+      <span class="t">${it.nm} ×${n}<br><small>¥${it.price} · ${it.cat}类</small></span></div>`;
+  }).join("") || `<p class="desc">（空袋子）</p>`;
+
+  // 烤肠结局
+  const sEm=document.getElementById("sEm"), sT=document.getElementById("sTitle"), sS=document.getElementById("sSub");
+  if(left>=SAUSAGE){
+    sEm.textContent="🌭";
+    sT.textContent=`剩 ¥${left}，买了根烤肠，还剩 ¥${left-SAUSAGE}`;
+    sS.textContent="花完钱顺便吃根烤肠——这就是100块的完美收尾。";
+  }else if(left===0){
+    sEm.textContent="🪙";
+    sT.textContent="一分不剩，刚刚好";
+    sS.textContent="100块花得精光，烤肠没吃着，但日子过得很满。";
+  }else{
+    sEm.textContent="🥲";
+    sT.textContent=`剩 ¥${left}，差 ¥${SAUGE_GAP(left)} 才够烤肠`;
+    sS.textContent="钱花得有点猛，烤肠吃不上了。下回想留三块钱的。";
+  }
+  function SAUGE_GAP(l){return SAUSAGE-l;}
+
+  document.getElementById("taPill").textContent = "TA · "+ta.name+" "+ta.em;
+  document.getElementById("taDesc").textContent = ta.desc;
+
+  // 总评
+  const total = (sync+life)/2;
+  let summary;
+  if(total>=80) summary="这一局，钱钱钱过出了意思。";
+  else if(total>=55) summary="钱没白花，默契也凑合，赵雪峰看了能笑一下。";
+  else summary="钱是花出去了，意思还差着点。下局换个 TA？";
+  document.getElementById("metaLine").textContent =
+    `默契 ${sync} · 日子 ${life} · 综合 ${Math.round(total)}　|　${summary}`;
+
+  show("stageResult");
+}
+
+// 事件
+document.getElementById("goShop").onclick=()=>{
+  ta = pickTA(); // 进超市就定好 TA，结算时用
+  show("stageShop"); renderTabs(); renderGrid(); syncBudget();
+};
+document.getElementById("clearBag").onclick=()=>{bag={};guessId=null;renderGrid();syncBudget();};
+document.getElementById("checkout").onclick=()=>{if(bagCount()===0){alert("给 TA 挑点东西再结算吧～");return;}checkout();};
+document.getElementById("backShop").onclick=()=>{show("stageShop");renderGrid();syncBudget();};
+document.getElementById("restart").onclick=()=>{
+  bag={};guessId=null;ta=null;curZone=ZONES[0].id;show("stageIntro");
+};
+document.getElementById("again").onclick=()=>{
+  bag={};guessId=null;ta=pickTA();curZone=ZONES[0].id;
+  show("stageShop");renderTabs();renderGrid();syncBudget();
+};
+
+// init
+if(!ta) ta = pickTA();
+</script>
+</body>
+</html>

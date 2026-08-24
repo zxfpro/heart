@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>双人舞请柬 · 给爸妈的一封舞会邀约</title>
+<style>
+  :root{
+    --bg:#f7efe4; --card:#fffaf3; --ink:#2b2024; --soft:#9a8a7e;
+    --wine:#7a2e3a; --wine2:#9c4252; --gold:#b8935a; --rose:#e7c5b8;
+    --line:#efe2d3; --chip:#f3e6d6;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(180deg,#fbf3e9,#f3e7d6); color:var(--ink);
+    min-height:100dvh; max-width:480px; margin:0 auto; padding:0 0 120px;
+    line-height:1.55;
+  }
+  .serif{font-family:"Songti SC","Source Han Serif SC",Georgia,"Times New Roman",serif}
+  header{
+    position:sticky; top:0; z-index:10; background:rgba(247,239,228,.92);
+    backdrop-filter:blur(8px); padding:14px 16px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  header .row{display:flex; align-items:center; justify-content:space-between}
+  header h1{font-size:18px; margin:0; font-weight:800; letter-spacing:.5px}
+  header .sub{font-size:12px; color:var(--soft); margin-top:2px}
+  .badge{
+    font-size:11px; color:var(--gold); background:#f4e8d4; border:1px solid #ecd9b6;
+    padding:4px 9px; border-radius:20px; font-weight:700; letter-spacing:.3px;
+  }
+  main{padding:16px}
+  section{margin:18px 0}
+  h2{
+    font-size:13px; margin:0 0 4px; color:var(--wine); font-weight:700;
+    letter-spacing:1px; text-transform:uppercase;
+  }
+  .hint{font-size:12px; color:var(--soft); margin:0 0 12px}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:18px 16px; box-shadow:0 1px 0 rgba(0,0,0,.02);
+  }
+  /* Hero */
+  .hero{
+    background:linear-gradient(160deg,#7a2e3a 0%,#5e2330 100%);
+    color:#fbe9c8; border-radius:20px; padding:26px 20px 22px; position:relative;
+    overflow:hidden; text-align:center; border:1px solid #4d1d29;
+  }
+  .hero .ring{
+    position:absolute; border-radius:50%; border:1px solid rgba(251,233,200,.18);
+    width:260px; height:260px; left:50%; top:-110px; transform:translateX(-50%);
+  }
+  .hero .ring.b{width:180px; height:180px; top:-70px}
+  .hero .kicker{font-size:11px; letter-spacing:3px; color:var(--gold); opacity:.9}
+  .hero .title{
+    font-size:30px; line-height:1.25; margin:10px 0 4px; font-weight:700;
+    text-shadow:0 1px 0 rgba(0,0,0,.15);
+  }
+  .hero .title em{font-style:normal; color:#f0c987}
+  .hero .lead{font-size:13px; line-height:1.7; color:#f3dcbf; margin:6px auto 0; max-width:300px}
+  .hero .couple{font-size:46px; line-height:1; margin-top:14px; display:inline-block;
+    animation:sway 4s ease-in-out infinite}
+  @keyframes sway{
+    0%,100%{transform:rotate(-3deg) translateY(0)}
+    50%{transform:rotate(3deg) translateY(-4px)}
+  }
+  .hero .sign{
+    margin-top:14px; font-size:12px; color:#e7c897; font-style:italic;
+  }
+  /* benefits */
+  .bens{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
+  .ben{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:14px 12px;
+  }
+  .ben .em{font-size:24px}
+  .ben .t{font-size:13px; font-weight:700; margin-top:6px; color:var(--ink)}
+  .ben .d{font-size:11.5px; color:var(--soft); margin-top:3px; line-height:1.5}
+  .wink{
+    margin-top:10px; padding:10px 12px; background:#fdeef0; border:1px dashed #e7b9c1;
+    border-radius:12px; font-size:12px; color:var(--wine2); line-height:1.6;
+  }
+  .wink b{color:var(--wine)}
+  /* dance picker */
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+  .dance{
+    border:1px solid var(--line); background:var(--card); border-radius:14px;
+    padding:14px 4px 10px; text-align:center; cursor:pointer; position:relative;
+    transition:transform .08s; user-select:none;
+  }
+  .dance:active{transform:scale(.95)}
+  .dance .ic{font-size:24px; line-height:1}
+  .dance .nm{font-size:12px; font-weight:700; margin-top:6px; color:var(--ink)}
+  .dance .en{font-size:10px; color:var(--soft); margin-top:1px}
+  .dance .vibe{font-size:10.5px; color:var(--soft); margin-top:4px; line-height:1.4}
+  .dance.sel{
+    border-color:var(--wine); background:#fbf1ed; box-shadow:0 0 0 2px #f0d3da inset;
+  }
+  .dance.sel::after{
+    content:"✓"; position:absolute; top:6px; right:8px; font-size:11px;
+    color:var(--wine); font-weight:800;
+  }
+  .dance.sel .nm{color:var(--wine)}
+  /* schedule */
+  .slots{display:flex; flex-direction:column; gap:8px}
+  .slot{
+    display:flex; align-items:center; gap:12px; background:var(--card);
+    border:1px solid var(--line); border-radius:12px; padding:10px 12px; cursor:pointer;
+  }
+  .slot .day{
+    font-size:11px; font-weight:700; color:var(--gold); background:#f4e8d4;
+    padding:3px 8px; border-radius:8px; min-width:54px; text-align:center;
+  }
+  .slot .time{font-size:13px; font-weight:600; color:var(--ink)}
+  .slot .lv{font-size:11px; color:var(--soft); margin-left:auto}
+  .slot.sel{border-color:var(--gold); background:#fbf6ec}
+  /* invitation letter */
+  .letter{
+    background:#fbf6ec; border:1px solid #ecd9b6; border-radius:14px;
+    padding:16px 16px 14px; font-size:13.5px; line-height:1.85; color:#4a3a30;
+    white-space:pre-wrap; word-break:break-word;
+  }
+  .letter .hl{color:var(--wine); font-weight:700}
+  .letter .pl{border-bottom:1px dashed #c9a877; color:var(--wine2); padding:0 2px}
+  /* actions */
+  .actions{position:sticky; bottom:0; left:0; right:0; margin:0 -16px;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,rgba(247,239,228,0),rgba(247,239,228,.96) 30%);
+    display:flex; gap:10px}
+  .btn{
+    flex:1; border:none; border-radius:12px; padding:13px 0; font-size:14px;
+    font-weight:700; letter-spacing:.5px; cursor:pointer; transition:transform .08s;
+  }
+  .btn:active{transform:scale(.97)}
+  .btn-primary{background:var(--wine); color:#fbe9c8}
+  .btn-ghost{background:var(--card); color:var(--ink); border:1px solid var(--line)}
+  .toast{
+    position:fixed; left:50%; bottom:88px; transform:translateX(-50%) translateY(20px);
+    background:#2b2024; color:#fbe9c8; font-size:13px; padding:10px 16px;
+    border-radius:24px; opacity:0; pointer-events:none; transition:all .25s; z-index:50;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  .foot{text-align:center; font-size:11px; color:var(--soft); margin-top:6px; line-height:1.6}
+  .foot a{color:var(--wine2); text-decoration:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="row">
+    <div>
+      <h1>双人舞请柬</h1>
+      <div class="sub">给爸妈的一封舞会邀约</div>
+    </div>
+    <span class="badge">来自女儿</span>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <span class="ring"></span>
+    <span class="ring b"></span>
+    <div class="kicker serif">A DATE, AGAIN</div>
+    <div class="title serif">亲爱的爸妈，<br><em>再跳一支舞吧。</em></div>
+    <p class="lead">你们当年也是踩着节拍认识的。<br>这一次，换我请客——<br>给你们报一个双人舞班，重新约会一次。</p>
+    <div class="couple">💃🕺</div>
+    <div class="sign serif">— 你们的小棉袄 敬上</div>
+  </section>
+
+  <section>
+    <h2>为什么是双人舞</h2>
+    <p class="hint">不是为了逼你们运动，是真的想让你们再"对上眼神"。</p>
+    <div class="bens">
+      <div class="ben">
+        <div class="em">💞</div>
+        <div class="t">重燃默契</div>
+        <div class="d">搭手、让步、互带，比说一百句"多沟通"管用。</div>
+      </div>
+      <div class="ben">
+        <div class="em">🫀</div>
+        <div class="t">顺便锻炼</div>
+        <div class="d">一支舞≈慢跑20分钟，关节不硬，晚上睡得香。</div>
+      </div>
+      <div class="ben">
+        <div class="em">🥂</div>
+        <div class="t">重新约会</div>
+        <div class="d">每周固定一晚，是属于你俩的"二人世界"。</div>
+      </div>
+      <div class="ben">
+        <div class="em">👯</div>
+        <div class="t">结识新友</div>
+        <div class="d">舞池里同龄的叔叔阿姨，比广场舞聊得来。</div>
+      </div>
+    </div>
+    <div class="wink">
+      <b>还有个私心：</b>你们一旦跳上瘾，每周两个晚上不在家——<b>就没空催我找男朋友了</b>。双赢。
+    </div>
+  </section>
+
+  <section>
+    <h2>挑一支舞</h2>
+    <p class="hint">点一下选你们想试的（可以多选，我帮你们约体验课）。</p>
+    <div class="grid" id="dances">
+      <div class="dance" data-name="华尔兹" data-en="Waltz">
+        <div class="ic">🎶</div>
+        <div class="nm">华尔兹</div>
+        <div class="en">Waltz</div>
+        <div class="vibe">优雅从容<br>适合新手</div>
+      </div>
+      <div class="dance" data-name="探戈" data-en="Tango">
+        <div class="ic">🌹</div>
+        <div class="nm">探戈</div>
+        <div class="en">Tango</div>
+        <div class="vibe">深情克制<br>眼神杀</div>
+      </div>
+      <div class="dance" data-name="伦巴" data-en="Rumba">
+        <div class="ic">🌴</div>
+        <div class="nm">伦巴</div>
+        <div class="en">Rumba</div>
+        <div class="vibe">缠绵慢舞<br>最浪漫</div>
+      </div>
+      <div class="dance" data-name="恰恰" data-en="Cha-cha">
+        <div class="ic">🎉</div>
+        <div class="nm">恰恰</div>
+        <div class="en">Cha-cha</div>
+        <div class="vibe">俏皮欢快<br>笑出腹肌</div>
+      </div>
+      <div class="dance" data-name="牛仔" data-en="Jive">
+        <div class="ic">⚡</div>
+        <div class="nm">牛仔</div>
+        <div class="en">Jive</div>
+        <div class="vibe">活力满格<br>越跳越年轻</div>
+      </div>
+      <div class="dance" data-name="狐步" data-en="Foxtrot">
+        <div class="ic">🎩</div>
+        <div class="nm">狐步</div>
+        <div class="en">Foxtrot</div>
+        <div class="vibe">老派绅士<br>当年范儿</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>时间安排</h2>
+    <p class="hint">点一下选你们方便的时段（体验课 60 分钟）。</p>
+    <div class="slots" id="slots">
+      <div class="slot" data-day="周二" data-time="19:30–20:30">
+        <span class="day">周二</span><span class="time">19:30–20:30</span><span class="lv">晚班 · 推荐</span>
+      </div>
+      <div class="slot" data-day="周四" data-time="19:30–20:30">
+        <span class="day">周四</span><span class="time">19:30–20:30</span><span class="lv">晚班</span>
+      </div>
+      <div class="slot" data-day="周六" data-time="10:00–11:00">
+        <span class="day">周六</span><span class="time">10:00–11:00</span><span class="lv">晨班 · 阳光好</span>
+      </div>
+      <div class="slot" data-day="周日" data-time="15:00–16:00">
+        <span class="day">周日</span><span class="time">15:00–16:00</span><span class="lv">下午茶场</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>给爸妈的请柬</h2>
+    <p class="hint">下面这段话可以一键复制，发给爸妈（微信就行）。</p>
+    <div class="letter" id="letter"></div>
+  </section>
+
+  <div class="foot">
+    本请柬由「显意识」落地 · 一条潜意识想法→一个能发出去的页面<br>
+    想法来自：爸妈又催找男朋友了，好烦。
+  </div>
+
+</main>
+
+<div class="actions">
+  <button class="btn btn-ghost" id="resetBtn">重选</button>
+  <button class="btn btn-primary" id="copyBtn">复制请柬 发给爸妈</button>
+</div>
+
+<div class="toast" id="toast">已复制 · 去微信粘给爸妈 👉</div>
+
+<script>
+  const dances = [...document.querySelectorAll('#dances .dance')];
+  const slots   = [...document.querySelectorAll('#slots .slot')];
+  const letterEl = document.getElementById('letter');
+  const toast   = document.getElementById('toast');
+
+  let pickedDances = new Set();
+  let pickedSlot = null;
+
+  dances.forEach(d => d.addEventListener('click', () => {
+    const n = d.dataset.name;
+    if (pickedDances.has(n)) { pickedDances.delete(n); d.classList.remove('sel'); }
+    else { pickedDances.add(n); d.classList.add('sel'); }
+    render();
+  }));
+
+  slots.forEach(s => s.addEventListener('click', () => {
+    if (pickedSlot === s) { pickedSlot.classList.remove('sel'); pickedSlot = null; }
+    else { slots.forEach(x => x.classList.remove('sel')); pickedSlot = s; s.classList.add('sel'); }
+    render();
+  }));
+
+  function danceList(){
+    if (!pickedDances.size) return '<span class="pl">（还没挑舞种）</span>';
+    return [...pickedDances].map(n => `<span class="hl">${n}</span>`).join('、');
+  }
+  function slotStr(){
+    if (!pickedSlot) return '<span class="pl">（还没定时间）</span>';
+    return `<span class="hl">${pickedSlot.dataset.day} ${pickedSlot.dataset.time}</span>`;
+  }
+
+  function render(){
+    letterEl.innerHTML =
+`亲爱的爸妈：
+
+你们催我找对象，我催你们<span class="hl">重新约会</span>。
+这周末起，我给你们报了一个双人舞体验课——
+舞种：${danceList()}
+时间：${slotStr()}
+地点：家附近的文化馆舞蹈教室（我来订车）。
+
+别说什么"我们都这把年纪了"——
+恰恰是这把年纪，才该再牵一次手、再踩一次对方的脚。
+跳不好没关系，笑出来就算赢。
+
+<div style="text-align:right; margin-top:8px;">爱你们的女儿 💃🕺</div>`;
+  }
+  render();
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    pickedDances.clear(); pickedSlot = null;
+    dances.forEach(d => d.classList.remove('sel'));
+    slots.forEach(s => s.classList.remove('sel'));
+    render();
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', async () => {
+    const text = letterEl.innerText.trim();
+    try{
+      if (navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+      }
+      toast.classList.add('show');
+      setTimeout(()=>toast.classList.remove('show'), 2200);
+    }catch(e){
+      toast.textContent = '复制失败 · 长按请柬文字手动复制';
+      toast.classList.add('show');
+      setTimeout(()=>{toast.classList.remove('show');
+        toast.textContent='已复制 · 去微信粘给爸妈 👉';}, 2400);
+    }
+  });
+</script>
+</body>
+</html>

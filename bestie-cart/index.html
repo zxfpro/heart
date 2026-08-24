@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>闺蜜购物车 · 约不齐就先逛起来</title>
+<style>
+  :root{
+    --bg:#fbf6ee; --card:#ffffff; --ink:#2b2420; --soft:#8a7d72;
+    --brand:#e8623c; --brand2:#f0a83a; --ok:#3fa66a; --no:#d2503f;
+    --line:#efe6da; --chip:#f6ede1;
+    --p1:#e8623c; --p2:#7a5cb0; --p3:#3f8ab0;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:linear-gradient(180deg,#fdf8ef,#f6ecdd); color:var(--ink);
+    min-height:100dvh; max-width:480px; margin:0 auto; padding:0 0 96px;
+    line-height:1.5;
+  }
+  header{
+    position:sticky; top:0; z-index:10; background:rgba(251,246,238,.92);
+    backdrop-filter:blur(8px); padding:14px 16px 10px; border-bottom:1px solid var(--line);
+  }
+  header .row{display:flex; align-items:center; justify-content:space-between}
+  header h1{font-size:18px; margin:0; font-weight:800; letter-spacing:.5px}
+  header .sub{font-size:12px; color:var(--soft); margin-top:2px}
+  .tabs{display:flex; gap:6px; margin-top:12px}
+  .tab{
+    flex:1; padding:9px 0; text-align:center; font-size:12px; font-weight:600;
+    border:1px solid var(--line); border-radius:10px; background:var(--card);
+    color:var(--soft); cursor:pointer; white-space:nowrap;
+  }
+  .tab.active{background:var(--ink); color:#fff; border-color:var(--ink)}
+  .tab.locked{opacity:.45}
+  main{padding:14px 16px}
+  h2{font-size:14px; margin:18px 0 10px; color:var(--ink)}
+  .hint{font-size:12px; color:var(--soft); margin:-4px 0 10px}
+
+  /* persona chips */
+  .who-row{display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap}
+  .who{
+    font-size:11px; font-weight:700; padding:5px 11px; border-radius:20px;
+    border:1px solid var(--line); background:var(--card); color:var(--soft); cursor:pointer;
+    display:flex; align-items:center; gap:5px;
+  }
+  .who .d{width:8px; height:8px; border-radius:50%; background:#d8ccbe}
+  .who.on{color:#fff; border-color:transparent}
+  .who.p1.on{background:var(--p1)} .who.p1 .d{background:var(--p1)}
+  .who.p2.on{background:var(--p2)} .who.p2 .d{background:var(--p2)}
+  .who.p3.on{background:var(--p3)} .who.p3 .d{background:var(--p3)}
+
+  /* attempts (schedule view) */
+  .attempt{
+    border:1px solid var(--line); background:var(--card); border-radius:14px;
+    padding:12px 13px; margin-bottom:8px; display:flex; gap:10px; align-items:flex-start;
+  }
+  .attempt .x{font-size:18px; line-height:1}
+  .attempt .body{flex:1}
+  .attempt .when{font-size:13px; font-weight:700; color:var(--ink)}
+  .attempt .why{font-size:12px; color:var(--no); margin-top:2px}
+  .attempt .by{font-size:11px; color:var(--soft); margin-top:3px}
+  .attempt.miss{border-color:#f0c4bd; background:#fdeeec}
+  .badge-fail{
+    display:inline-block; font-size:11px; font-weight:700; color:#fff; background:var(--no);
+    padding:2px 9px; border-radius:20px; margin-left:6px;
+  }
+  .meter{height:8px; border-radius:8px; background:#eadfce; overflow:hidden; margin-top:6px}
+  .meter i{display:block; height:100%; background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .trigger{
+    margin-top:14px; padding:16px; border:2px dashed #d8c3b6; border-radius:16px;
+    text-align:center; background:#fdf5ec;
+  }
+  .trigger p{font-size:13px; color:var(--ink); margin:0 0 10px; line-height:1.6}
+  .trigger p b{color:var(--brand)}
+  .btn{
+    border:0; background:var(--ink); color:#fff; font-weight:700; font-size:14px;
+    padding:11px 18px; border-radius:12px; cursor:pointer;
+  }
+  .btn.brand{background:var(--brand)}
+  .btn.ghost{background:#fff; color:var(--brand); border:1px solid var(--brand)}
+  .btn:disabled{opacity:.45}
+
+  /* product grid */
+  .grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
+  .item{
+    border:1px solid var(--line); background:var(--card); border-radius:14px;
+    padding:11px 4px 7px; text-align:center; cursor:pointer; position:relative;
+    transition:transform .08s;
+  }
+  .item:active{transform:scale(.94)}
+  .item .em{font-size:26px; line-height:1}
+  .item .nm{font-size:11px; margin-top:5px; color:var(--ink)}
+  .item .who-mark{
+    position:absolute; top:5px; left:5px; width:9px; height:9px; border-radius:50%;
+  }
+
+  /* cart list */
+  .ci{
+    display:flex; align-items:center; gap:10px; border:1px solid var(--line);
+    background:var(--card); border-radius:14px; padding:10px 12px; margin-bottom:8px;
+  }
+  .ci .em{font-size:26px; line-height:1}
+  .ci .body{flex:1; min-width:0}
+  .ci .nm{font-size:14px; font-weight:700}
+  .ci .note{font-size:12px; color:var(--soft); margin-top:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .ci .by{font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; color:#fff}
+  .ci .x{font-size:20px; color:var(--soft); cursor:pointer; padding:4px 8px; line-height:1}
+  .ci .x:active{color:var(--no)}
+  .empty{text-align:center; color:var(--soft); font-size:13px; padding:24px 8px}
+
+  /* add-note sheet */
+  .sheet{
+    position:fixed; bottom:0; left:50%; transform:translate(-50%,100%);
+    width:100%; max-width:480px; background:#fff; border-radius:20px 20px 0 0;
+    box-shadow:0 -8px 30px -10px rgba(0,0,0,.18); padding:18px 16px 22px;
+    transition:transform .25s; z-index:40;
+  }
+  .sheet.show{transform:translate(-50%,0)}
+  .sheet h3{margin:0 0 4px; font-size:15px; text-align:center}
+  .sheet .pick-em{font-size:40px; text-align:center; margin:6px 0 8px}
+  .sheet textarea{
+    width:100%; border:1px solid var(--line); border-radius:12px; padding:11px;
+    font-size:13px; font-family:inherit; resize:none; height:64px; color:var(--ink);
+  }
+  .sheet .acts{display:flex; gap:8px; margin-top:12px}
+  .sheet .acts .btn{flex:1}
+
+  /* polaroid / 合照 */
+  .polaroid{
+    background:#fff; padding:14px 14px 16px; border-radius:6px;
+    box-shadow:0 14px 40px -16px rgba(43,36,32,.45);
+    margin:6px 0 0;
+  }
+  .polaroid .pic{
+    background:linear-gradient(135deg,#f6ede1,#efe2cf); border-radius:4px;
+    padding:14px 10px; min-height:120px;
+  }
+  .polaroid .grp{display:flex; flex-wrap:wrap; gap:6px; justify-content:center}
+  .polaroid .grp .g{
+    font-size:22px; background:#fff; border-radius:10px; padding:6px 8px;
+    box-shadow:0 2px 8px -4px rgba(0,0,0,.15); position:relative;
+  }
+  .polaroid .grp .g .d{position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; border:2px solid #fff}
+  .polaroid .cap{
+    text-align:center; margin-top:12px; font-size:14px; font-weight:700; color:var(--ink);
+  }
+  .polaroid .cap .sub{font-size:11px; font-weight:400; color:var(--soft); margin-top:2px}
+  .polaroid .strip{
+    display:flex; justify-content:center; gap:14px; margin-top:10px; font-size:11px; color:var(--soft);
+  }
+  .photo-tools{display:flex; gap:8px; margin-top:14px}
+  .photo-tools .btn{flex:1}
+
+  /* deferred list */
+  .dl{
+    border:1px solid var(--line); background:var(--card); border-radius:14px;
+    padding:11px 12px; margin-bottom:8px; display:flex; align-items:center; gap:10px;
+  }
+  .dl .em{font-size:22px}
+  .dl .nm{flex:1; font-size:13px; font-weight:600}
+  .dl .by{font-size:10px; font-weight:700; color:#fff; padding:2px 8px; border-radius:20px}
+  .dl .cbox{
+    width:22px; height:22px; border:2px solid #d8ccbe; border-radius:7px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+  .dl.done{opacity:.55}
+  .dl.done .nm{text-decoration:line-through}
+  .dl.done .cbox{background:var(--ok); border-color:var(--ok); color:#fff}
+  .lock-banner{
+    border:1px dashed #c9e4d3; background:#f4fbf6; border-radius:14px; padding:12px 13px;
+    text-align:center; color:var(--ok); font-size:12px; margin-bottom:12px;
+  }
+  .lock-banner b{font-size:13px}
+
+  footer{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%;
+    max-width:480px; background:rgba(251,246,238,.95); backdrop-filter:blur(8px);
+    border-top:1px solid var(--line); padding:10px 16px; display:flex; gap:10px; align-items:center;
+  }
+  footer .cart{flex:1; font-size:13px}
+  footer .cart b{color:var(--brand)}
+  footer button{
+    border:0; background:var(--ink); color:#fff; font-weight:700; font-size:14px;
+    padding:11px 18px; border-radius:12px; cursor:pointer;
+  }
+  footer button:disabled{opacity:.4}
+  .toast{
+    position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    background:rgba(43,36,32,.94); color:#fff; padding:18px 24px; border-radius:16px;
+    text-align:center; z-index:50; font-size:14px; opacity:0; pointer-events:none;
+    transition:opacity .2s; max-width:80%;
+  }
+  .toast.show{opacity:1}
+  .toast .big{font-size:28px; margin-bottom:6px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="row">
+    <div>
+      <h1>闺蜜购物车</h1>
+      <div class="sub" id="subHead">约不齐的饭，先一起逛起来</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-v="schedule">约饭</div>
+    <div class="tab" data-v="cart">购物车</div>
+    <div class="tab" data-v="photo">合照</div>
+    <div class="tab" data-v="later">等哪天</div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<footer id="foot" style="display:none">
+  <div class="cart">购物车 <b id="cartCount">0</b> 件 · <span id="whoSummary">就我在逛</span></div>
+  <button id="addBtn">丢进去</button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<!-- add-note sheet -->
+<div class="sheet" id="sheet">
+  <h3 id="sheetTitle">丢进购物车</h3>
+  <div class="pick-em" id="sheetEm">🛒</div>
+  <textarea id="sheetNote" placeholder="说点什么——为什么丢这个进来…"></textarea>
+  <div class="acts">
+    <button class="btn ghost" id="sheetCancel">算了</button>
+    <button class="btn brand" id="sheetConfirm">丢进去</button>
+  </div>
+</div>
+
+<script>
+const PERSONAS = [
+  {id:"p1", name:"我",   color:"#e8623c"},
+  {id:"p2", name:"阿珍", color:"#7a5cb0"},
+  {id:"p3", name:"小美", color:"#3f8ab0"}
+];
+
+const PRODUCTS = [
+  {id:"hotpot",  name:"火锅底料", em:"🍲"},
+  {id:"beef",    name:"肥牛卷",   em:"🥩"},
+  {id:"shrimp",  name:"虾滑",     em:"🦐"},
+  {id:"tofu",    name:"豆腐",     em:"🌖"},
+  {id:"mushroom",name:"菌菇拼盘", em:"🍄"},
+  {id:"leafy",   name:"生菜",     em:"🥬"},
+  {id:"beer",    name:"精酿",     em:"🍺"},
+  {id:"milktea", name:"奶茶",     em:"🧋"},
+  {id:"chips",   name:"薯片",     em:"🥔"},
+  {id:"cake",    name:"小蛋糕",   em:"🍰"},
+  {id:"strawberry",name:"草莓",  em:"🍓"},
+  {id:"choco",   name:"巧克力",   em:"🍫"},
+  {id:"noodle",  name:"泡面",     em:"🍜"},
+  {id:"dumpling",name:"水饺",     em:"🥟"},
+  {id:"cola",    name:"可乐",     em:"🥤"},
+  {id:"coffee",  name:"挂耳咖啡", em:"☕"},
+  {id:"face",    name:"面膜",     em:"🧴"},
+  {id:"candle",  name:"香薰蜡烛", em:"🕯️"},
+  {id:"flower",  name:"鲜花",     em:"💐"},
+  {id:"film",    name:"胶卷",     em:"🎞️"}
+];
+
+const ATTEMPTS = [
+  {when:"上上周三", who:"阿珍", why:"临时加班到十点"},
+  {when:"上周末",   who:"小美", why:"回老家吃席走不开"},
+  {when:"这周三",   who:"我",   why:"感冒了怕传染你们"}
+];
+
+const state = {
+  view: "schedule",
+  persona: "p1",
+  cart: [],          // {pid, by, note, ts}
+  locked: false,
+  bought: {},        // pid -> true
+  unlockedCart: false
+};
+
+const $ = s => document.querySelector(s);
+const el = (t,c,h) => { const e=document.createElement(t); if(c)e.className=c; if(h!=null)e.innerHTML=h; return e; };
+const persona = id => PERSONAS.find(p=>p.id===id);
+const product = id => PRODUCTS.find(p=>p.id===id);
+const fmtTime = () => {
+  const d=new Date(); const p=n=>String(n).padStart(2,"0");
+  return `${d.getMonth()+1}.${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
+function toast(big, msg){
+  const t=$("#toast");
+  t.innerHTML = (big?`<div class="big">${big}</div>`:"") + (msg||"");
+  t.classList.add("show");
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove("show"), 1900);
+}
+
+function setView(v){
+  state.view=v;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.v===v));
+  render();
+}
+
+function render(){
+  const app=$("#app"); app.innerHTML="";
+  if(state.view==="schedule")      renderSchedule(app);
+  else if(state.view==="cart")     renderCart(app);
+  else if(state.view==="photo")    renderPhoto(app);
+  else                             renderLater(app);
+  syncFooter();
+}
+
+/* ---------- 约饭（trigger） ---------- */
+function renderSchedule(app){
+  app.appendChild(el("h2","","约饭记录"));
+  app.appendChild(el("div","hint","三个人，三次都没凑齐——不是不想见，是真凑不齐。"));
+
+  const meter=el("div");
+  const failCount = ATTEMPTS.length; // 3
+  meter.innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--soft)">
+      <span>凑齐进度</span><b style="color:var(--no)">0/${failCount}</b>
+    </div>
+    <div class="meter"><i style="width:0%"></i></div>
+    <div style="font-size:11px;color:var(--soft);margin-top:4px">三次都没凑齐，触发 Plan B</div>`;
+  app.appendChild(meter);
+
+  ATTEMPTS.forEach(a=>{
+    const c=el("div","attempt miss");
+    c.innerHTML=`
+      <div class="x">❌</div>
+      <div class="body">
+        <div class="when">${a.when}<span class="badge-fail">没凑齐</span></div>
+        <div class="why">${a.why}</div>
+        <div class="by">${a.who} 请的</div>
+      </div>`;
+    app.appendChild(c);
+  });
+
+  const trig=el("div","trigger");
+  trig.innerHTML=`
+    <p>饭可以等，<b>一起逛超市的心</b>不用等。<br>
+       一个人推车太冷清——开个共享购物车，<br>
+       谁想起什么就丢进去，聊够了截图当合照。</p>
+    <button class="btn brand" id="openCart">开共享购物车</button>`;
+  app.appendChild(trig);
+
+  $("#openCart").onclick=()=>{
+    state.unlockedCart=true;
+    toast("🛒","购物车已开，喊她们来丢东西");
+    setView("cart");
+  };
+}
+
+/* ---------- 购物车 ---------- */
+function renderCart(app){
+  app.appendChild(el("h2","","现在是 · "+persona(state.persona).name+"在逛"));
+  app.appendChild(el("div","hint","点货架上的东西丢进购物车，谁想起来谁丢，不用同时在线。"));
+
+  const who=el("div","who-row");
+  PERSONAS.forEach(p=>{
+    const c=el("div","who "+p.id+(state.persona===p.id?" on":""));
+    c.innerHTML=`<span class="d"></span>${p.name}`;
+    c.onclick=()=>{ state.persona=p.id; render(); };
+    who.appendChild(c);
+  });
+  app.appendChild(who);
+
+  app.appendChild(el("h2","","货架"));
+  const grid=el("div","grid");
+  PRODUCTS.forEach(p=>{
+    const c=el("div","item");
+    c.appendChild(el("div","em",p.em));
+    c.appendChild(el("div","nm",p.name));
+    c.onclick=()=>openSheet(p.id);
+    grid.appendChild(c);
+  });
+  app.appendChild(grid);
+
+  app.appendChild(el("h2","","车里已有 "+state.cart.length));
+  if(state.cart.length===0){
+    app.appendChild(el("div","empty","空空的——想起了什么就丢进来吧"));
+  } else {
+    state.cart.forEach((it,idx)=>{
+      const p=product(it.pid); const pe=persona(it.by);
+      const c=el("div","ci");
+      c.innerHTML=`
+        <div class="em">${p.em}</div>
+        <div class="body">
+          <div class="nm">${p.name}</div>
+          ${it.note?`<div class="note">“${it.note}”</div>`:""}
+        </div>
+        <div class="by" style="background:${pe.color}">${pe.name}</div>
+        <div class="x" data-i="${idx}">×</div>`;
+      c.querySelector(".x").onclick=()=>{ state.cart.splice(idx,1); render(); };
+      app.appendChild(c);
+    });
+  }
+}
+
+/* add-note sheet */
+let sheetPid=null;
+function openSheet(pid){
+  sheetPid=pid;
+  const p=product(pid);
+  $("#sheetEm").textContent=p.em;
+  $("#sheetTitle").textContent="丢进购物车 · "+p.name;
+  $("#sheetNote").value="";
+  $("#sheet").classList.add("show");
+  setTimeout(()=>$("#sheetNote").focus(),260);
+}
+$("#sheetCancel").onclick=()=>$("#sheet").classList.remove("show");
+$("#sheetConfirm").onclick=()=>{
+  if(!sheetPid) return;
+  state.cart.push({pid:sheetPid, by:state.persona, note:$("#sheetNote").value.trim(), ts:Date.now()});
+  $("#sheet").classList.remove("show");
+  const pe=persona(state.persona);
+  toast("✅", pe.name+"丢了个 "+product(sheetPid).name);
+  render();
+};
+
+/* ---------- 合照 ---------- */
+function renderPhoto(app){
+  app.appendChild(el("h2","","购物车合照"));
+  app.appendChild(el("div","hint","聊够了，把车里的东西拍张「合照」发群里——等哪天真去买了就是兑现。"));
+
+  if(state.cart.length===0){
+    app.appendChild(el("div","empty","车里还空着，先去丢点东西再拍合照"));
+    return;
+  }
+
+  const present = new Set(state.cart.map(i=>i.by));
+  const pol=el("div","polaroid");
+  const pic=el("div","pic");
+  const grp=el("div","grp");
+  state.cart.forEach(it=>{
+    const p=product(it.pid); const pe=persona(it.by);
+    const g=el("div","g",p.em);
+    const d=el("div","d"); d.style.background=pe.color;
+    g.appendChild(d);
+    grp.appendChild(g);
+  });
+  pic.appendChild(grp);
+  pol.appendChild(pic);
+
+  const names=[...present].map(id=>persona(id).name).join("·");
+  const cap=el("div","cap",
+    `我们今天约的饭<div class="sub">虽然没真吃上 · ${state.cart.length}样东西 · ${fmtTime()}</div>`);
+  pol.appendChild(cap);
+  pol.appendChild(el("div","strip",
+    `<span>📷 ${names}</span><span>${PERSONAS.length}个人·异步逛超市</span>`));
+  app.appendChild(pol);
+
+  const tools=el("div","photo-tools");
+  tools.innerHTML=`
+    <button class="btn ghost" id="dlShot">📷 截图发群里</button>
+    <button class="btn brand" id="toLater">送去「等哪天」</button>`;
+  app.appendChild(tools);
+
+  $("#dlShot").onclick=async()=>{
+    if(navigator.share){
+      try{
+        await navigator.share({title:"我们今天约的饭", text:`${state.cart.length}样东西·${names}`});
+        toast("📸","已分享到群里");
+        return;
+      }catch(e){}
+    }
+    toast("📸","长按保存这张合照，发群里");
+  };
+  $("#toLater").onclick=()=>{
+    state.locked=true;
+    toast("🔒","清单已锁，等哪天有空去买");
+    setView("later");
+  };
+}
+
+/* ---------- 等哪天 ---------- */
+function renderLater(app){
+  app.appendChild(el("h2","","等哪天去买"));
+  app.appendChild(el("div","hint","截图发完群，这单就立在那儿——谁有空谁认领，哪天真凑齐了去超市兑现。"));
+
+  if(state.cart.length===0){
+    app.appendChild(el("div","empty","还没东西可等，先去购物车里丢点"));
+    return;
+  }
+
+  if(state.locked){
+    app.appendChild(el("div","lock-banner",
+      `<b>清单已锁定 🔒</b><br>等哪天三个人有空，一起去超市把它买回来`));
+  }
+
+  const left=state.cart.filter(it=>!state.bought[it.pid]);
+  left.forEach(it=>{
+    const p=product(it.pid); const pe=persona(it.by);
+    const done=state.bought[it.pid];
+    const c=el("div","dl"+(done?" done":""));
+    c.innerHTML=`
+      <div class="em">${p.em}</div>
+      <div class="nm">${p.name}</div>
+      <div class="by" style="background:${pe.color}">${pe.name}</div>
+      <div class="cbox">${done?"✓":""}</div>`;
+    c.querySelector(".cbox").onclick=()=>{
+      state.bought[it.pid]=!state.bought[it.pid];
+      if(state.bought[it.pid]){
+        const allDone = state.cart.every(i=>state.bought[i.pid]);
+        toast(allDone?"🎉":"✓", allDone?"全买回来了！这顿饭真吃上了":p.name+" 已兑现");
+      }
+      render();
+    };
+    app.appendChild(c);
+  });
+
+  const tools=el("div","photo-tools");
+  tools.innerHTML=`
+    <button class="btn ghost" id="backPhoto">← 回合照</button>
+    <button class="btn brand" id="allDone">今天全买回来了！</button>`;
+  app.appendChild(tools);
+  $("#backPhoto").onclick=()=>setView("photo");
+  $("#allDone").onclick=()=>{
+    state.cart.forEach(it=>state.bought[it.pid]=true);
+    toast("🎉","这顿饭，真吃上了");
+    render();
+  };
+}
+
+function syncFooter(){
+  const foot=$("#foot");
+  if(state.view!=="cart"){ foot.style.display="none"; return; }
+  foot.style.display="flex";
+  $("#cartCount").textContent=state.cart.length;
+  const present=new Set(state.cart.map(i=>i.by));
+  const names=[...present].map(id=>persona(id).name).join("·");
+  $("#whoSummary").textContent = present.size? names+"在逛" : "就我在逛";
+  $("#addBtn").onclick=()=>{
+    const p=PRODUCTS[Math.floor(Math.random()*PRODUCTS.length)];
+    openSheet(p.id);
+  };
+}
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick=()=>setView(t.dataset.v);
+});
+
+render();
+</script>
+</body>
+</html>
