@@ -35,6 +35,10 @@ DEFAULT_CONFIG = {
     "recency_half_life": 86400.0,  # 新旧衰减半衰期（秒，默认 24h）
     "distill_age": 3600,       # 想法多久后开始蒸馏（秒）
     "distill_max": 3,          # 蒸馏到第几轮后遗忘（压缩到 0）
+    "executor": "hermes",      # 执行层「身体」：hermes / opencode（可插拔）
+    "hermes_base_url": "http://127.0.0.1:8642",  # Hermes API Server（OpenAI 协议）
+    "hermes_api_key": "",      # Hermes API Server 鉴权 key（走 HERMES_API_KEY 环境变量）
+    "hermes_model": "hermes-agent",
 }
 
 TEXT_EXTS = {
@@ -88,7 +92,8 @@ def load_config(path: Path) -> dict:
         except Exception as e:
             print(f"[warn] 配置读取失败，用默认: {e}", file=sys.stderr)
     # 环境变量优先，避免把密钥/端点写死在代码或配置里
-    for _key, _env in (("api_key", "HEART_API_KEY"), ("base_url", "HEART_BASE_URL")):
+    for _key, _env in (("api_key", "HEART_API_KEY"), ("base_url", "HEART_BASE_URL"),
+                       ("hermes_api_key", "HERMES_API_KEY"), ("hermes_base_url", "HERMES_BASE_URL")):
         _val = os.environ.get(_env)
         if _val:
             cfg[_key] = _val

@@ -21,3 +21,9 @@ base_url: ""
 api_key: ""
 model: deepseek-v4-flash
 temperature: 0.8
+
+# 执行层「身体」（可插拔）—— heart 的想/记忆独立于执行后端
+executor: hermes                     # hermes / opencode
+hermes_base_url: http://127.0.0.1:8642   # Hermes API Server（OpenAI 协议）
+hermes_api_key: ""                   # 用环境变量 HERMES_API_KEY 注入
+hermes_model: hermes-agent

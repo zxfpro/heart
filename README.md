@@ -56,7 +56,9 @@ Heart 的参考实现叫 **idea-engine**，像一个人的心智一样工作：*
 
 - **潜意识层**（`engine.py`）：只负责自由冒出想法（含「欲望」，参考马斯洛需求层次），不评判。它的 `while True` 定时循环就是「心跳」本身。
 - **判别层**（`discriminator.py`）：只做过滤——判断每条想法 SKIP 还是 PASS，同时负责蒸馏：老想法逐渐压缩、遗忘（遗忘 = 上下文压缩到 0，不是删除）。
-- **执行层**（`hermes.py`）：Hermes agent，处理 PASS 的想法：探索、行动、把结果写回事实文件夹。
+- **执行层**（`hermes.py`）：处理 PASS 的想法——通过**可插拔的「身体」**去行动（默认 Hermes API Server，也可切回 `opencode`，未来可换任意平台），并把执行回报写回事实层。
+
+> 🧠 **大脑 / 身体分离**：heart 的「想」与「记忆」（`facts/` + `.ideas/`）完全独立于执行后端；执行层只是「身体 / 途径」，可随意替换。类比：大脑通过身体去执行，身体的回报再充实记忆。Hermes 只是当前的一具身体，未来有了脑机接口，就是另一具。
 
 ---
 
@@ -66,15 +68,17 @@ Heart 的参考实现叫 **idea-engine**，像一个人的心智一样工作：*
 
 - Python 3.10+
 - `pip install -r requirements.txt`（判别层需要 `rich`；`engine.py` 仅用标准库）
-- 执行层需要 [`opencode`](https://opencode.ai) CLI（`hermes.py` 通过 `opencode run` 落地行动）
+- 执行层默认走 **Hermes API Server**（OpenAI 协议，需在 Hermes 侧启用 `api_server` 平台）；也可切回 `opencode` CLI（`executor: opencode`）
 
 ### 配置（敏感信息走环境变量）
 
 仓库里的 `config.yaml` 只有空占位。真实端点与密钥用环境变量注入：
 
 ```bash
-export HEART_BASE_URL="https://你的网关/v1"   # OpenAI 兼容接口
+export HEART_BASE_URL="https://你的网关/v1"        # 「想」用的快速 LLM（OpenAI 兼容）
 export HEART_API_KEY="***"
+export HERMES_BASE_URL="http://127.0.0.1:8642"     # 「做」用的 Hermes API Server
+export HERMES_API_KEY="***"                         # = Hermes 的 API_SERVER_KEY
 ```
 
 > ⚠️ 切勿把真实 `api_key` / `base_url` 提交进 git。环境变量优先于 `config.yaml`。
@@ -102,7 +106,7 @@ nohup python3 hermes.py  /path/to/folder > /tmp/hermes.log 2>&1 &
 
 - 潜意识：用它定语气（`engine.py` 注入 prompt）
 - 判别层：用它定身份做判断（`discriminator.py` 注入 prompt）
-- 执行层：opencode 自动读它（`hermes.py` 以该目录为 cwd）
+- 执行层：用它定身份去行动（`hermes.py` 把 persona 注入执行 prompt）
 
 一个 `AGENTS.md` 同时管三个脑。想换人设，换个文件夹 + 换个 AGENTS.md 即可。
 
@@ -129,6 +133,7 @@ verdict: SKIP: 只是想想，不需要行动
 
 - **树结构**：事实彼此独立是根；想法通过 `parent_kind`+`parent` 挂树。`python3 engine.py /folder --tree` 查看。
 - **想法与事实地位等同**：分开放只为区分「想法 vs 事实」，都作为原料参与生成。
+- **执行回报 = 新事实**：执行层做完后，其回复会写回 `facts/`（`执行-<时间戳>.md`），作为「感官反馈」进入下一轮上下文。
 
 ### 配置 config.yaml
 
@@ -140,7 +145,9 @@ verdict: SKIP: 只是想想，不需要行动
 | recency_half_life | 新旧衰减半衰期（秒） |
 | distill_age | 想法多久后开始蒸馏（秒） |
 | distill_max | 蒸馏到第几轮后遗忘 |
-| base_url / api_key / model / temperature | LLM 接口（优先用环境变量 HEART_BASE_URL / HEART_API_KEY 注入） |
+| base_url / api_key / model / temperature | 「想」用 LLM 接口（环境变量 HEART_BASE_URL / HEART_API_KEY） |
+| executor | 执行层「身体」：`hermes`（默认）/ `opencode` |
+| hermes_base_url / hermes_api_key / hermes_model | Hermes API Server 连接（环境变量 HERMES_BASE_URL / HERMES_API_KEY） |
 
 ---
 
@@ -157,6 +164,7 @@ verdict: SKIP: 只是想想，不需要行动
 - [x] 三层引擎原型（潜意识 / 判别 / 执行）
 - [x] 密钥与环境变量注入（HEART_BASE_URL / HEART_API_KEY）
 - [x] 双服务部署（mind 思维服务 + hermes 执行服务）
+- [x] 可插拔执行层（对接 Hermes API Server，大脑/身体分离）
 - [ ] 主动行动触发器（proactive-action triggers）
 - [ ] 长期目标与记忆脉搏（long-term goal & memory pulse）
 - [ ] 可插拔的动机 / 情感模块（pluggable motivation & affect modules）

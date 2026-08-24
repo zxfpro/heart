@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """common — idea-engine 三层架构的共享工具。"""
+import json
 import re
 import subprocess
 import threading
+import urllib.request
+from datetime import datetime
 from pathlib import Path
 
 from rich import box
@@ -90,6 +93,65 @@ def run_opencode(folder: Path, prompt: str) -> str:
 
     t.join(3)
     return "\n".join(stdout_lines).strip()
+
+
+def run_hermes(folder: Path, prompt: str, cfg: dict) -> str:
+    """执行层「身体」之一：通过 Hermes API Server（OpenAI 协议）触发真实 agent 执行。
+
+    heart 的「想」与「记忆」不依赖任何具体执行后端；本函数只是其中一种「身体」。
+    """
+    base = (cfg.get("hermes_base_url") or "").strip()
+    if not base:
+        return "未配置 hermes_base_url：请设置环境变量 HERMES_BASE_URL"
+    url = base.rstrip("/") + "/v1/chat/completions"
+    payload = {
+        "model": cfg.get("hermes_model", "hermes-agent"),
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + (cfg.get("hermes_api_key") or ""),
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=int(cfg.get("executor_timeout", 900))) as resp:
+            raw = resp.read().decode("utf-8")
+    except Exception as e:
+        return f"Hermes 执行失败: {e}"
+    try:
+        body = json.loads(raw)
+        content = body["choices"][0]["message"].get("content") or ""
+    except Exception as e:
+        return f"解析 Hermes 响应失败: {e} raw={raw[:200]}"
+    return content.strip()
+
+
+def run_executor(folder: Path, prompt: str, cfg: dict) -> str:
+    """执行层分派：按配置选择「身体」（hermes / opencode / 未来其它平台）。
+
+    大脑（想/记忆）不变，身体可换——这正是 heart 可迁移到任意平台的根基。
+    """
+    kind = (cfg.get("executor") or "hermes").strip().lower()
+    if kind == "opencode":
+        return run_opencode(folder, prompt)
+    return run_hermes(folder, prompt, cfg)
+
+
+def write_fact(folder: Path, text: str) -> str:
+    """执行结果写回事实层（感官反馈）：作为一条新事实，进入下一轮上下文。
+
+    这是 heart 独立记忆闭环的关键——「身体」做完后的回报，充实长期记忆。
+    """
+    text = (text or "").strip()
+    if not text:
+        return ""
+    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+    fname = f"执行-{ts}.md"
+    (folder / fname).write_text(f"# 执行记录 {ts}\n\n{text}\n", encoding="utf-8")
+    return fname
 
 
 def show_idea(idea: dict) -> None:
