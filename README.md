@@ -77,4 +77,8 @@ The goal of Heart is not to make a model "answer better", but to give it a **sel
 
 ## 许可证 / License
 
-本项目以 [MIT License](LICENSE) 开源。Licensed under the [MIT License](LICENSE).
+本项目以 **[GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE)** 开源——**强 Copyleft**：无论修改、分发，还是以网络服务（SaaS / API）方式运行修改版，都必须以 AGPL-3.0 向用户开源回馈。
+
+Licensed under the **[GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE)** — strong copyleft: modifying, distributing, or offering a modified version as a network service (SaaS / API) all require you to open-source your changes under AGPL-3.0.
+
+> ℹ️ **姊妹项目许可**：Heart 采用 AGPL-3.0，而 [heart-girlfriend](https://github.com/zxfpro/heart-girlfriend) 采用 MIT。若你的应用**直接包含/链接 Heart 的代码**（构成衍生作品），AGPL 的 Copyleft 可能要求该应用同样以 AGPL-3.0 开源；若仅作为**独立服务**通过 API 调用 Heart，则可保持自身许可不变。商用/闭源集成前建议先厘清二者边界。
