@@ -15,6 +15,9 @@ htmlcov/
 venv/
 env/
 
+# --- 项目运行时产物 / Runtime artifacts ---
+.ideas/
+
 # --- Node / JS ---
 node_modules/
 .npm/
