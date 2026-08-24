@@ -1,0 +1,45 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+wheels/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+
+# --- Node / JS ---
+node_modules/
+.npm/
+.yarn/
+.pnp.*
+next/
+out/
+
+# --- Go ---
+*.exe
+*.test
+*.out
+
+# --- Rust ---
+target/
+
+# --- 通用 / General ---
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+.idea/
+.vscode/
+*.local
