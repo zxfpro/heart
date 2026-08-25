@@ -306,6 +306,8 @@ def generate(prompt: str, cfg: dict):
     base = (cfg.get("base_url") or "").strip()
     if not base:
         return "", "未配置 base_url：请设置环境变量 HEART_BASE_URL（或 config.yaml 的 base_url）", -1
+    if not base.startswith(("http://", "https://")):
+        return "", f"base_url 无效（需以 http(s):// 开头）：{base}", -1
     url = base.rstrip("/") + "/chat/completions"
     payload = {
         "model": cfg.get("model", ""),
