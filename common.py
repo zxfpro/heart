@@ -103,7 +103,9 @@ def run_hermes(folder: Path, prompt: str, cfg: dict) -> str:
     base = (cfg.get("hermes_base_url") or "").strip()
     if not base:
         return "未配置 hermes_base_url：请设置环境变量 HERMES_BASE_URL"
-    url = base.rstrip("/") + "/v1/chat/completions"
+    base = base.rstrip("/")
+    # 兼容两种 base_url 写法：host 或 host/v1（OpenAI 惯例常带 /v1 后缀）
+    url = base + ("/chat/completions" if base.endswith("/v1") else "/v1/chat/completions")
     payload = {
         "model": cfg.get("hermes_model", "hermes-agent"),
         "messages": [{"role": "user", "content": prompt}],
