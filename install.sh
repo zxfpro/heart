@@ -6,7 +6,7 @@
 #    ./install.sh                         交互式问答配置并启动
 #    ./install.sh --check                 只校验两个端点连通性
 #    ./install.sh --no-start              只生成 .env，不启动
-#    ./install.sh --persona ./小鹿 \
+#    ./install.sh --persona ./xiaolu \
 #        --think-url https://api.xxx/v1 --think-key sk-xxx \
 #        --executor hermes \
 #        --executor-url http://127.0.0.1:8642 --executor-key xxx

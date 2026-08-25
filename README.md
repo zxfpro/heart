@@ -95,7 +95,7 @@ cp .env.example .env
 # 编辑 .env，填入 HEART_BASE_URL / HEART_API_KEY / HERMES_BASE_URL / HERMES_API_KEY
 ```
 
-非交互式（可脚本化）用参数：`./install.sh --persona ./小鹿 --think-url https://api.xxx/v1 --think-key sk-xxx --executor hermes --executor-url http://127.0.0.1:8642 --executor-key xxx`
+非交互式（可脚本化）用参数：`./install.sh --persona ./xiaolu --think-url https://api.xxx/v1 --think-key sk-xxx --executor hermes --executor-url http://127.0.0.1:8642 --executor-key xxx`
 
 > ⚠️ `.env` 已被 `.gitignore` 忽略，密钥绝不会被提交。`os.environ` 优先于 `config.yaml`，所以密钥只放 `.env`。
 
