@@ -64,41 +64,52 @@ Heart 的参考实现叫 **idea-engine**，像一个人的心智一样工作：*
 
 ## 快速开始 / Quick Start
 
-### 依赖
-
-- Python 3.10+
-- `pip install -r requirements.txt`（判别层需要 `rich`；`engine.py` 仅用标准库）
-- 执行层默认走 **Hermes API Server**（OpenAI 协议，需在 Hermes 侧启用 `api_server` 平台）；也可切回 `opencode` CLI（`executor: opencode`）
-
-### 配置（敏感信息走环境变量）
-
-仓库里的 `config.yaml` 只有空占位。真实端点与密钥用环境变量注入：
+### 1. 安装
 
 ```bash
-export HEART_BASE_URL="https://你的网关/v1"        # 「想」用的快速 LLM（OpenAI 兼容）
-export HEART_API_KEY="***"
-export HERMES_BASE_URL="http://127.0.0.1:8642"     # 「做」用的 Hermes API Server
-export HERMES_API_KEY="***"                         # = Hermes 的 API_SERVER_KEY
+git clone https://github.com/zxfpro/heart.git
+cd heart
+python3 -m venv .venv && source .venv/bin/activate   # 建议用 venv
+pip install -r requirements.txt                        # 只需 rich；engine.py 仅用标准库
 ```
 
-> ⚠️ 切勿把真实 `api_key` / `base_url` 提交进 git。环境变量优先于 `config.yaml`。
+### 2. 配置（两个后端，都走环境变量）
 
-### 运行（两个服务）
+heart 有两个后端依赖，分别对应「想」和「做」：
+
+| 后端 | 用途 | 环境变量 | 说明 |
+|------|------|----------|------|
+| **「想」LLM** | 潜意识冒想法 + 判别层 | `HEART_BASE_URL` / `HEART_API_KEY` | 任意 OpenAI 兼容接口（OpenAI / DeepSeek / vLLM / Ollama…） |
+| **「做」执行层** | 处理 PASS 的想法 | `HERMES_BASE_URL` / `HERMES_API_KEY` | Hermes API Server（OpenAI 协议，触发带工具的完整 agent）；或 `executor: opencode` 走 opencode CLI |
+
+最省事的方式：复制 `.env.example` → `.env`，填好值，`start.sh` 会自动加载：
 
 ```bash
-python3 mind.py    /path/to/folder            # 思维服务：潜意识冒想法 + 判别 + 蒸馏
-python3 hermes.py  /path/to/folder            # 执行服务：处理 PASS 的想法
-
-# 调试：--once 只跑一轮；--idea "..." 直接喂一条；--verbose 看细节
-python3 mind.py    /path/to/folder --once
-python3 hermes.py  /path/to/folder --idea "把'我喜欢下雨天'记进一个心情文件"
-
-# 后台常驻
-nohup python3 mind.py    /path/to/folder > /tmp/mind.log   2>&1 &
-nohup python3 hermes.py  /path/to/folder > /tmp/hermes.log 2>&1 &
+cp .env.example .env
+# 编辑 .env，填入 HEART_BASE_URL / HEART_API_KEY / HERMES_BASE_URL / HERMES_API_KEY
 ```
 
-> `engine.py` / `discriminator.py` 仍可单独运行（调试用）；`mind.py` 是合并后的推荐入口。
+> ⚠️ `.env` 已被 `.gitignore` 忽略，密钥绝不会被提交。`os.environ` 优先于 `config.yaml`，所以密钥只放 `.env`。
+
+**「做」侧二选一：**
+- **Hermes API Server**（默认）：需要一个运行中的 [Hermes](https://github.com/NousResearch/hermes-agent) agent，启用它的 `api_server`（OpenAI 兼容接口）。把 `HERMES_BASE_URL` 指向它、`HERMES_API_KEY` 填它的网关 key。
+- **opencode**（备用）：不想搭 Hermes 就装 [opencode](https://opencode.ai) CLI，然后在 `config.yaml` 里设 `executor: opencode`，无需 `HERMES_*` 变量。
+
+### 3. 运行（一条命令，两个服务）
+
+```bash
+./start.sh ./my-persona        # 思维服务 + 执行服务一起启动
+```
+
+或手动起两个进程：
+
+```bash
+python3 mind.py    ./my-persona    # 思维服务：潜意识冒想法 + 判别 + 蒸馏
+python3 hermes.py  ./my-persona    # 执行服务：处理 PASS 的想法
+```
+
+> `my-persona/` 里放一个 `AGENTS.md`（人设）+ 若干事实 `.md`，heart 就围绕它们思考、行动。
+> 调试：`--once` 只跑一轮；`--idea "..."` 直接喂一条想法；`--verbose` 看细节。`engine.py` / `discriminator.py` 仍可单独运行（调试用），`mind.py` 是合并后的推荐入口。
 
 ### 人设（AGENTS.md）
 
