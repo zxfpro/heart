@@ -20,7 +20,7 @@ from pathlib import Path
 
 import common
 from common import console, recover_stuck
-from engine import IDEAS_DIR_NAME, load_config, run_once
+from engine import IDEAS_DIR_NAME, current_interval, load_config, run_once
 from discriminator import scan_once, distill_once, load_persona
 
 
@@ -74,7 +74,7 @@ def main() -> None:
             raise
         except Exception as e:
             console.print(f"[red][error] {e}[/red]")
-        time.sleep(cfg["interval"])
+        time.sleep(current_interval(cfg))
 
 
 if __name__ == "__main__":

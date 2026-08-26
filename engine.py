@@ -17,11 +17,18 @@ import urllib.request
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 DEFAULT_CONFIG = {
     "interval": 3600,      # tick 间隔（秒）
+    "active_hours": "",    # 动态频率：活跃时段 "HH:MM-HH:MM"（留空=不启用，用 interval）
+    "active_interval": 90,  # 活跃时段 tick 间隔（秒）
+    "rest_interval": 300,   # 非活跃时段 tick 间隔（秒）
+    "timezone": "",         # 时区（如 Asia/Shanghai），留空=实例本地时区
+    "clinginess": 1.0,      # 粘人程度 0-1：缩放 proactive_files 的触发权重
+    "proactive_files": "关于你,关于朋友",  # 触发「主动找对方」的人设文件名关键词（逗号分隔）
     "limit": 1,            # 每轮生成条数（默认 1 条）
     "recent": 20,          # 生成时回看最近 N 条想法
     "max_chars": 20000,    # 喂给模型的原料字符上限
@@ -219,9 +226,14 @@ def weighted_pick(facts: list, ideas: list, cfg: dict):
     fact_w = float(cfg.get("fact_weight", 3.0))
     idea_w = float(cfg.get("idea_weight", 1.0))
     half = float(cfg.get("recency_half_life", 86400.0))
+    clinginess = float(cfg.get("clinginess", 1.0))
+    proactive_keys = [k.strip() for k in str(cfg.get("proactive_files", "") or "").split(",") if k.strip()]
     sources, weights = [], []
     for f in facts:
         w = fact_w * (0.5 ** (max(0.0, now - f["ts"]) / half))
+        ref = f.get("ref", "")
+        if proactive_keys and any(k in ref for k in proactive_keys):
+            w *= clinginess  # 粘人程度：缩放「主动找对方」类人设的触发权重
         sources.append(f)
         weights.append(w)
     for it in ideas:
@@ -249,6 +261,32 @@ def render_focus(focus) -> str:
     text = focus.get("text") or focus.get("idea", "")
     label = "事实" if kind == "fact" else "想法"
     return f"### 焦点（{label}）: {ref}\n{text}\n"
+
+
+def _hhmm(s: str) -> int:
+    h, m = s.split(":")
+    return int(h) * 60 + int(m)
+
+
+def current_interval(cfg: dict) -> int:
+    """按当前时间返回 tick 间隔；支持白天/晚上动态频率（active_hours）。"""
+    window = str(cfg.get("active_hours", "") or "").strip()
+    if not window or "-" not in window:
+        return int(cfg.get("interval", 3600))
+    try:
+        frm, to = window.split("-", 1)
+        frm_m = _hhmm(frm.strip())
+        to_m = _hhmm(to.strip())
+        tz = str(cfg.get("timezone", "") or "").strip()
+        now = datetime.now(ZoneInfo(tz)) if tz else datetime.now()
+        cur = now.hour * 60 + now.minute
+        if frm_m <= to_m:
+            active = frm_m <= cur < to_m
+        else:  # 跨午夜（如 23:00-09:00）
+            active = cur >= frm_m or cur < to_m
+        return int(cfg.get("active_interval", 90)) if active else int(cfg.get("rest_interval", 300))
+    except Exception:
+        return int(cfg.get("interval", 3600))
 
 
 def print_tree(ideas_dir: Path) -> None:
@@ -460,7 +498,7 @@ def main() -> None:
             raise
         except Exception as e:
             print(f"[error] 本轮异常: {e}", file=sys.stderr)
-        time.sleep(cfg["interval"])
+        time.sleep(current_interval(cfg))
 
 
 if __name__ == "__main__":

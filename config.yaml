@@ -1,5 +1,16 @@
 # idea-engine 配置
-interval: 20          # 潜意识 tick 间隔（秒）
+interval: 20          # 潜意识 tick 间隔（秒）—— 未启用动态频率时的基础值
+
+# 动态心跳频率（可选）：白天活跃、晚上慢
+timezone: ""            # 时区（如 Asia/Shanghai），留空=用实例本地时区
+active_hours: "09:00-23:00"   # 活跃时段 HH:MM-HH:MM（留空=不启用动态频率，用 interval）
+active_interval: 90           # 活跃时段 tick 间隔（秒）
+rest_interval: 300            # 非活跃时段 tick 间隔（秒）
+
+# 粘人程度（0-1，缩放「proactive_files」的触发权重，越高越主动找对方）
+clinginess: 1.0
+proactive_files: "关于你,关于朋友"   # 触发「主动找对方」的人设文件名关键词（逗号分隔）
+
 limit: 1              # 每轮生成条数（默认 1 条）
 recent: 20            # 生成时回看最近 N 条已有想法
 max_chars: 20000      # 喂给模型的原料字符上限
