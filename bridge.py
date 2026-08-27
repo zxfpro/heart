@@ -88,6 +88,23 @@ def save_state(path, s):
     json.dump(s, open(path, "w"), ensure_ascii=False)
 
 
+def _now_ts() -> str:
+    return time.strftime("%m-%d %H:%M")
+
+
+def _append_inbox(path, line, max_lines=200):
+    """追加一行到对话记录，并只保留最近 max_lines 行，旧的自动淡出。"""
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(line)
+    try:
+        lines = open(path, encoding="utf-8").read().splitlines()
+        if len(lines) > max_lines:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines[-max_lines:]) + "\n")
+    except Exception:
+        pass
+
+
 def inbound(cfg, s):
     raw = subprocess.check_output(
         [cfg["hermes"], "sessions", "export", "--format", "jsonl",
@@ -108,9 +125,8 @@ def inbound(cfg, s):
     if not new:
         return
     new.sort(key=lambda x: x[0])
-    with open(cfg["inbox"], "a") as f:
-        for _, t in new:
-            f.write("\n[你] " + t + "\n")
+    for _, t in new:
+        _append_inbox(cfg["inbox"], "\n[你] " + _now_ts() + " " + t + "\n")
     s["last_msg_id"] = new[-1][0]
     save_state(cfg["state"], s)
 
@@ -140,9 +156,8 @@ def outbound(cfg, s):
     fresh = [l for l in lines if l not in delivered]
     if not fresh:
         return
-    with open(cfg["inbox"], "a") as f:
-        for l in fresh:
-            f.write("\n[我] " + l + "\n")
+    for l in fresh:
+        _append_inbox(cfg["inbox"], "\n[我] " + _now_ts() + " " + l + "\n")
     for l in fresh:
         write_to_session(cfg, l)
     print("\n".join(fresh))  # stdout → cron deliver 投到对应平台
