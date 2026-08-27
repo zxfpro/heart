@@ -140,14 +140,13 @@ def outbound(cfg, s):
     fresh = [l for l in lines if l not in delivered]
     if not fresh:
         return
-    # 像真人发微信：一次只发一条短消息，剩下的留到下次 cron（预留时间空间，不一次性倒出来）
-    one = fresh[0]
     with open(cfg["inbox"], "a") as f:
-        f.write("\n[我] " + one + "\n")
-    write_to_session(cfg, one)
-    print(one)  # stdout → cron deliver 投到对应平台
-    # delivered 只保留仍在 outbox 里的行，避免无限增长，也兼容 outbox 被清空
-    s["delivered"] = [l for l in delivered | {one} if l in lines]
+        for l in fresh:
+            f.write("\n[我] " + l + "\n")
+    for l in fresh:
+        write_to_session(cfg, l)
+    print("\n".join(fresh))  # stdout → cron deliver 投到对应平台
+    s["delivered"] = lines
     save_state(cfg["state"], s)
 
 
