@@ -289,6 +289,28 @@ def current_interval(cfg: dict) -> int:
         return int(cfg.get("interval", 3600))
 
 
+def _now_str(cfg: dict) -> str:
+    """当前时间的中文友好描述，注入提示词让小鹿有时间感（早上别道晚安）。"""
+    tz = str(cfg.get("timezone", "") or "").strip()
+    now = datetime.now(ZoneInfo(tz)) if tz else datetime.now()
+    weekdays = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+    wd = weekdays[now.weekday()]
+    h = now.hour
+    if 5 <= h < 9:
+        part = "清晨"
+    elif 9 <= h < 12:
+        part = "上午"
+    elif 12 <= h < 14:
+        part = "中午"
+    elif 14 <= h < 18:
+        part = "下午"
+    elif 18 <= h < 23:
+        part = "晚上"
+    else:
+        part = "深夜"
+    return f"{now.year}年{now.month}月{now.day}日 {wd} {part} {h}:{now.minute:02d}"
+
+
 def print_tree(ideas_dir: Path) -> None:
     ideas = list_ideas(ideas_dir)
     if not ideas:
@@ -413,6 +435,7 @@ def run_once(folder: Path, cfg: dict, ideas_dir: Path, template: str) -> int:
         .replace("{focus}", focus_str)
         .replace("{method}", method)
         .replace("{persona}", persona or "(无)（用自然、口语化的普通人语气）")
+        .replace("{now}", _now_str(cfg))
     )
 
     stdout, stderr, rc = generate(prompt, cfg)

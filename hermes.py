@@ -21,7 +21,7 @@ from common import (
     rewrite_idea, build_prompt, console, VERBOSE,
     show_idea, show_verdict, run_executor, write_fact,
 )
-from engine import IDEAS_DIR_NAME, parse_idea_md, load_config
+from engine import IDEAS_DIR_NAME, parse_idea_md, load_config, _now_str
 
 
 def act_one(folder: Path, path: Path, idea: dict, template: str, cfg: dict) -> tuple[str, str]:
@@ -32,6 +32,7 @@ def act_one(folder: Path, path: Path, idea: dict, template: str, cfg: dict) -> t
         verdict=idea.get("verdict", ""),
         seed=idea.get("seed", ""),
         facts_dir=str(folder),
+        now=_now_str(cfg),
     )
     out = run_executor(folder, prompt, cfg)   # 可插拔「身体」：hermes / opencode
     write_fact(folder, out)                    # 执行回报写回事实层（感官反馈）
@@ -77,7 +78,7 @@ def main() -> None:
         show_idea(idea)
         console.print("[bold cyan]▸ Hermes 执行中…[/bold cyan]")
         prompt = build_prompt(template, idea=args.idea, verdict="", seed="-",
-                              facts_dir=str(folder))
+                              facts_dir=str(folder), now=_now_str(cfg))
         out = run_executor(folder, prompt, cfg)
         write_fact(folder, out)
         show_verdict("done", out)
